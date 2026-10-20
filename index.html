@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>COMPRAS &amp; IMPORTAÇÃO - Delta Rio</title>
+<meta name="theme-color" content="#08215A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Compras DR">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#08215A}
+iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#08215A}
+#capa{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#08215A;color:#C8D5EC;font:15px "Segoe UI",system-ui,-apple-system,sans-serif;transition:opacity .35s;z-index:2}
+#capa img{width:150px;height:150px;border-radius:50%}
+#capa b{margin-top:18px;color:#fff;font:600 30px "Segoe UI",system-ui,sans-serif;letter-spacing:.18em}
+#capa small{margin-top:6px;color:#fff;font-size:13px;letter-spacing:.42em;opacity:.9}
+#msg{margin-top:22px}
+#capa.fora{opacity:0;pointer-events:none}
+#msg{min-height:22px;text-align:center;padding:0 20px}
+</style>
+</head>
+<body>
+<iframe id="painel" allow="clipboard-read; clipboard-write; fullscreen" title="COMPRAS &amp; IMPORTAÇÃO"></iframe>
+<div id="capa"><img src="icone-512.png" alt=""><b>DELTA RIO</b><small>ELEVADORES</small><div id="msg">Carregando…</div></div>
+<script>
+/* O painel continua no Google Apps Script; esta página só o mostra em tela cheia, sem a faixa do Google. */
+var BASE = 'https://script.google.com/macros/s/AKfycbzb-gG589nBWSBvmzJGj_6MfP3GExCFWFBdV7GsRDCNYj-0sXxo-4r_29_0VZ1OCLip/exec';
+var CHAVE = 'T_is75kiz3JAa-zId6wI2Ksm';
+var fr = document.getElementById('painel'), capa = document.getElementById('capa'), msg = document.getElementById('msg'), atual = '';
+function valido(u) { return typeof u === 'string' && u.indexOf(BASE + '?') === 0; }
+function abrir(u) {
+  atual = u; capa.classList.remove('fora');
+  if (!navigator.onLine) { msg.textContent = 'Sem internet. O painel abre sozinho quando a conexão voltar.'; return; }
+  msg.textContent = 'Carregando…';
+  fr.src = u;
+  var p = (u.split('&p=')[1] || '').split('&')[0];
+  try { history.replaceState(null, '', p ? '#' + p : location.pathname); } catch (e) {}
+}
+fr.addEventListener('load', function () { if (fr.src) setTimeout(function () { capa.classList.add('fora'); }, 400); });
+window.addEventListener('message', function (e) {
+  var d = e.data;
+  if (!d || d.dr !== 'abrir' || !/\.googleusercontent\.com$/.test(e.origin)) return;
+  if (valido(d.url)) abrir(d.url);
+});
+window.addEventListener('online', function () { if (atual) abrir(atual); });
+window.addEventListener('offline', function () { msg.textContent = 'Sem internet. O painel abre sozinho quando a conexão voltar.'; capa.classList.remove('fora'); });
+var h = location.hash.slice(1), ini = BASE + '?k=' + CHAVE;
+if (/^(atv|sol|imp|adm)$/.test(h)) ini += '&p=' + h;
+else if (h && valido(decodeURIComponent(h))) ini = decodeURIComponent(h);
+abrir(ini);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>
