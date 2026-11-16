@@ -45,14 +45,14 @@ main{display:grid;grid-template-columns:minmax(0,37fr) minmax(0,63fr);gap:1.8vw;
 .section-label{font-size:1.35vh;letter-spacing:.3em;color:var(--accent2);font-weight:700;text-transform:uppercase}
 
 /* Cotações */
-.rates{display:grid;grid-template-rows:1fr 1fr auto;gap:1.8vh;min-height:0}
-.rate{padding:2.4vh 1.6vw;display:flex;flex-direction:column;justify-content:space-between}
+.rates{display:grid;grid-template-rows:1fr 1fr 1fr;gap:1.8vh;min-height:0}
+.rate{padding:2.2vh 1.6vw;display:flex;flex-direction:column;justify-content:space-between}
 .rate::before{content:"";position:absolute;left:0;top:0;bottom:0;width:.45vh;background:linear-gradient(var(--accent),transparent)}
 .rate-head{display:flex;align-items:center;gap:.9vw}
 .badge{width:5.4vh;height:5.4vh;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:2.6vh;background:linear-gradient(135deg,#4aa6ff,#1a56c9);box-shadow:0 .6vh 2vh rgba(30,110,255,.35)}
 .rate-name{font-size:2.3vh;font-weight:700}
 .rate-sub{font-size:1.4vh;color:var(--muted);margin-top:.2vh}
-.price{font-family:'JetBrains Mono',monospace;font-size:8.4vh;font-weight:700;line-height:1;letter-spacing:-.02em;transition:color 1.2s}
+.price{font-family:'JetBrains Mono',monospace;font-size:7vh;font-weight:700;line-height:1;letter-spacing:-.02em;transition:color 1.2s}
 .price small{font-size:3vh;color:var(--muted);margin-right:.35em;font-weight:500}
 .price.flash-up{color:var(--up)} .price.flash-down{color:var(--down)}
 .row{display:flex;align-items:center;gap:1.2vw;flex-wrap:wrap}
@@ -61,9 +61,8 @@ main{display:grid;grid-template-columns:minmax(0,37fr) minmax(0,63fr);gap:1.8vw;
 .var.down{background:rgba(255,107,122,.14);color:var(--down)}
 .meta{display:flex;gap:1.4vw;font-size:1.5vh;color:var(--muted)}
 .meta b{color:var(--txt);font-family:'JetBrains Mono',monospace;font-weight:500;margin-left:.3em}
-.spark{position:absolute;right:1.4vw;top:2.4vh;width:40%;height:7vh}
-.spark-label{position:absolute;right:1.4vw;top:9.8vh;font-size:1.15vh;color:var(--muted);letter-spacing:.1em}
-.updated{font-size:1.3vh;color:var(--muted);text-align:center;padding:.4vh 0}
+.spark{position:absolute;right:1.4vw;top:2.2vh;width:40%;height:6vh}
+.spark-label{position:absolute;right:1.4vw;top:8.6vh;font-size:1.15vh;color:var(--muted);letter-spacing:.1em}
 
 /* Notícias */
 .news{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:1.8vh;min-height:0}
@@ -130,7 +129,7 @@ body:hover .hint{opacity:.7}
   .row{gap:6px}
   .var{font-size:12px;padding:3px 8px}
   .meta{font-size:10.5px;gap:8px;flex-wrap:wrap}
-  .updated{grid-column:1/-1;font-size:10px}
+  #card-CNY{grid-column:1/-1}
   .news{display:flex;flex-direction:column;gap:14px}
   .featured{display:flex;flex-direction:column-reverse;padding:14px 14px 18px;gap:12px;min-height:0}
   .feat-text{overflow:visible;gap:10px;--fs:1 !important}
@@ -203,7 +202,22 @@ body:hover .hint{opacity:.7}
           <div class="meta"><div>Mín<b id="low-EUR">-</b></div><div>Máx<b id="high-EUR">-</b></div></div>
         </div>
       </div>
-      <div class="updated" id="updated">Conectando às cotações…</div>
+
+      <div class="card rate" id="card-CNY">
+        <div>
+          <div class="rate-head">
+            <div class="badge">¥</div>
+            <div><div class="rate-name">YUAN</div><div class="rate-sub">CNY → BRL</div></div>
+          </div>
+        </div>
+        <svg class="spark" id="spark-CNY" preserveAspectRatio="none" viewBox="0 0 100 40"></svg>
+        <div class="spark-label">ÚLTIMOS 30 DIAS</div>
+        <div class="price" id="price-CNY"><small>R$</small>-,----</div>
+        <div class="row">
+          <div class="var" id="var-CNY">—</div>
+          <div class="meta"><div>Mín<b id="low-CNY">-</b></div><div>Máx<b id="high-CNY">-</b></div></div>
+        </div>
+      </div>
     </section>
 
     <section class="news">
@@ -226,7 +240,7 @@ body:hover .hint{opacity:.7}
   <footer>
     <div class="tick-label"><span class="dot"></span>ÚLTIMAS</div>
     <div class="tick-wrap"><div class="tick-track" id="ticker"></div></div>
-    <div class="tick-rate"><span>USD</span><b id="t-USD">-</b><span>EUR</span><b id="t-EUR">-</b></div>
+    <div class="tick-rate"><span>USD</span><b id="t-USD">-</b><span>EUR</span><b id="t-EUR">-</b><span>CNY</span><b id="t-CNY">-</b></div>
   </footer>
 </div>
 <div class="hint">Pressione F ou dê duplo clique para tela cheia</div>
@@ -338,20 +352,17 @@ function setRate(code, bid, pct, low, high) {
 }
 async function loadRates() {
   try {
-    const j = await getJSON('https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL');
-    for (const [code, k] of [['USD', 'USDBRL'], ['EUR', 'EURBRL']]) {
+    const j = await getJSON('https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,CNY-BRL');
+    for (const [code, k] of [['USD', 'USDBRL'], ['EUR', 'EURBRL'], ['CNY', 'CNYBRL']]) {
       const q = j[k];
       setRate(code, +q.bid, +q.pctChange, +q.low, +q.high);
     }
-    $('updated').textContent = `Cotação comercial (compra) · atualizado às ${new Date().toLocaleTimeString('pt-BR')} · fonte: AwesomeAPI`;
   } catch (e) {
     try { // reserva: open.er-api.com (atualização diária)
       const j = await getJSON('https://open.er-api.com/v6/latest/USD');
       const brl = j.rates.BRL, eur = j.rates.EUR;
-      setRate('USD', brl, null); setRate('EUR', brl / eur, null);
-      $('updated').textContent = `Fonte reserva (referência diária) · ${new Date().toLocaleTimeString('pt-BR')}`;
+      setRate('USD', brl, null); setRate('EUR', brl / eur, null); setRate('CNY', brl / j.rates.CNY, null);
     } catch (e2) {
-      $('updated').textContent = 'Sem conexão com as cotações — tentando novamente…';
     }
   }
 }
@@ -370,7 +381,7 @@ function drawSpark(code, values) {
     <path d="${line}" fill="none" stroke="${c}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
 }
 async function loadHistory() {
-  for (const code of ['USD', 'EUR']) {
+  for (const code of ['USD', 'EUR', 'CNY']) {
     try {
       const arr = await getJSON(`https://economia.awesomeapi.com.br/json/daily/${code}-BRL/30`);
       drawSpark(code, arr.map(x => +x.bid).reverse());
@@ -480,7 +491,7 @@ document.addEventListener('dblclick', toggleFS);
 
 /* ================= AUTO-ATUALIZAÇÃO DO PAINEL ================= */
 // Quando uma versão nova é publicada no GitHub, o painel se recarrega sozinho (verifica a cada 5 min).
-const VERSAO = '2026-11-16-6';
+const VERSAO = '2026-11-16-7';
 async function checarVersao() {
   try {
     const html = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
