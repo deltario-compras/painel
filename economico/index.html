@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Painel Econômico — Delta Rio Elevadores</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg1:#03102a; --bg2:#0a2c66;
@@ -30,7 +30,7 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;paddin
 .logo{display:flex;align-items:center}
 .logo svg,.logo img{height:6.6vh;width:auto;display:block}
 .title{text-align:center}
-.title h1{font-size:2.7vh;letter-spacing:.38em;font-weight:800;text-transform:uppercase}
+.title h1{font-family:Michroma,Inter,sans-serif;font-size:2.9vh;letter-spacing:.12em;font-weight:400;text-transform:uppercase}
 .title .live{display:inline-flex;align-items:center;gap:.7em;font-size:1.45vh;color:var(--muted);letter-spacing:.25em;margin-top:.7vh;font-weight:600}
 .dot{width:1vh;height:1vh;border-radius:50%;background:#ff4d5e;animation:pulse 1.6s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,77,94,.7)}70%{box-shadow:0 0 0 1vh rgba(255,77,94,0)}100%{box-shadow:0 0 0 0 rgba(255,77,94,0)}}
@@ -126,7 +126,7 @@ body:hover .hint{opacity:.7}
         <div>
           <div class="rate-head">
             <div class="badge">$</div>
-            <div><div class="rate-name">Dólar Comercial</div><div class="rate-sub">USD → BRL</div></div>
+            <div><div class="rate-name">DÓLAR</div><div class="rate-sub">USD → BRL</div></div>
           </div>
         </div>
         <svg class="spark" id="spark-USD" preserveAspectRatio="none" viewBox="0 0 100 40"></svg>
@@ -142,7 +142,7 @@ body:hover .hint{opacity:.7}
         <div>
           <div class="rate-head">
             <div class="badge">€</div>
-            <div><div class="rate-name">Euro</div><div class="rate-sub">EUR → BRL</div></div>
+            <div><div class="rate-name">EURO</div><div class="rate-sub">EUR → BRL</div></div>
           </div>
         </div>
         <svg class="spark" id="spark-EUR" preserveAspectRatio="none" viewBox="0 0 100 40"></svg>
@@ -161,13 +161,13 @@ body:hover .hint{opacity:.7}
         <div class="feat-text" id="feat-text">
           <div class="feat-top"><span class="section-label">Destaque</span></div>
           <div class="feat-title">Carregando notícias de economia…</div>
-          <div class="feat-desc">Buscando as manchetes mais recentes em G1, InfoMoney, Estadão, Agência Brasil, Folha, InvestNews e Money Times.</div>
+          <div class="feat-desc">Buscando as manchetes mais recentes em 25 portais de economia e negócios.</div>
         </div>
         <img class="feat-img" id="feat-img" alt="">
         <div class="progress" id="progress"></div>
       </div>
       <div class="card list">
-        <div class="list-head"><span class="section-label">A seguir</span><span class="count" id="count"></span></div>
+        <div class="list-head"><span class="section-label">A seguir</span></div>
         <div class="items" id="items"><div class="empty">Aguardando notícias…</div></div>
       </div>
     </section>
@@ -185,19 +185,39 @@ body:hover .hint{opacity:.7}
 /* ================= CONFIGURAÇÃO ================= */
 const CONFIG = {
   ratesEveryMs: 60 * 1000,        // atualiza cotações a cada 1 min
-  newsEveryMs: 10 * 60 * 1000,    // atualiza notícias a cada 10 min
+  newsEveryMs: 15 * 60 * 1000,    // atualiza notícias a cada 15 min
   featuredEveryMs: 12 * 1000,     // troca o destaque a cada 12 s
-  maxNews: 40,
+  maxNews: 150,                   // total de manchetes no letreiro
+  maxDays: 3,                     // ignora notícias com mais de 3 dias
+  featuredPool: 40,               // destaques giram entre as 40 mais recentes
   tickerSpeed: 90                 // pixels por segundo do letreiro
 };
 const FEEDS = [
-  { name: 'G1',             url: 'https://g1.globo.com/rss/g1/economia/' },
-  { name: 'InfoMoney',      url: 'https://www.infomoney.com.br/feed/' },
-  { name: 'Estadão',        url: 'https://www.estadao.com.br/arc/outboundfeeds/feeds/rss/sections/economia/' },
-  { name: 'Agência Brasil', url: 'https://agenciabrasil.ebc.com.br/rss/economia/feed.xml' },
-  { name: 'Folha',          url: 'https://feeds.folha.uol.com.br/mercado/rss091.xml' },
-  { name: 'InvestNews',     url: 'https://investnews.com.br/feed/' },
-  { name: 'Money Times',    url: 'https://www.moneytimes.com.br/feed/' }
+  { name: 'G1',               url: 'https://g1.globo.com/rss/g1/economia/' },
+  { name: 'Valor',            url: 'https://pox.globo.com/rss/valor/' },
+  { name: 'O Globo',          url: 'https://oglobo.globo.com/rss/oglobo/economia/' },
+  { name: 'Folha',            url: 'https://feeds.folha.uol.com.br/mercado/rss091.xml' },
+  { name: 'Estadão',          url: 'https://www.estadao.com.br/arc/outboundfeeds/feeds/rss/sections/economia/' },
+  { name: 'UOL',              url: 'https://rss.uol.com.br/feed/economia.xml' },
+  { name: 'InfoMoney',        url: 'https://www.infomoney.com.br/feed/' },
+  { name: 'Agência Brasil',   url: 'https://agenciabrasil.ebc.com.br/rss/economia/feed.xml' },
+  { name: 'Bloomberg Línea',  url: 'https://www.bloomberglinea.com.br/arc/outboundfeeds/rss/?outputType=xml' },
+  { name: 'Investing.com',    url: 'https://br.investing.com/rss/news.rss' },
+  { name: 'Times Brasil',     url: 'https://timesbrasil.com.br/feed/' },
+  { name: 'Metrópoles',       url: 'https://www.metropoles.com/negocios/feed' },
+  { name: 'Veja',             url: 'https://veja.abril.com.br/economia/feed/' },
+  { name: 'Gazeta do Povo',   url: 'https://www.gazetadopovo.com.br/feed/rss/economia.xml' },
+  { name: 'CartaCapital',     url: 'https://www.cartacapital.com.br/economia/feed/' },
+  { name: 'iG Economia',      url: 'https://economia.ig.com.br/rss.xml' },
+  { name: 'InvestNews',       url: 'https://investnews.com.br/feed/' },
+  { name: 'Money Times',      url: 'https://www.moneytimes.com.br/feed/' },
+  { name: 'E-Investidor',     url: 'https://einvestidor.estadao.com.br/feed/' },
+  { name: 'Seu Dinheiro',     url: 'https://www.seudinheiro.com/feed/' },
+  { name: 'NeoFeed',          url: 'https://neofeed.com.br/feed/' },
+  { name: 'Forbes Brasil',    url: 'https://forbes.com.br/feed/' },
+  { name: 'Mercado&Consumo',  url: 'https://mercadoeconsumo.com.br/feed/' },
+  { name: 'Comex do Brasil',  url: 'https://www.comexdobrasil.com/feed/' },
+  { name: 'Portos e Navios',  url: 'https://www.portosenavios.com.br/noticias?format=feed&type=rss' }
 ];
 
 /* ================= UTILITÁRIOS ================= */
@@ -318,7 +338,7 @@ async function fetchFeed(feed) {
     }));
   } catch (e) { /* tenta a reserva */ }
   // 2ª tentativa: leitura direta do XML via allorigins
-  const xml = await getText('https://api.allorigins.win/raw?url=' + encodeURIComponent(feed.url));
+  const xml = await getText('https://api.allorigins.win/raw?url=' + encodeURIComponent(feed.url), 8000);
   const doc = new DOMParser().parseFromString(xml, 'text/xml');
   return [...doc.querySelectorAll('item')].map(it => {
     const g = sel => (it.getElementsByTagName(sel)[0] || {}).textContent || '';
@@ -328,23 +348,26 @@ async function fetchFeed(feed) {
   });
 }
 async function loadNews() {
-  const results = await Promise.allSettled(FEEDS.map(fetchFeed));
+  // busca 4 portais por vez para não sobrecarregar o serviço de conversão
+  const results = []; let i = 0;
+  async function worker() { while (i < FEEDS.length) { const f = FEEDS[i++]; try { results.push({ status: 'fulfilled', value: await fetchFeed(f) }); } catch (e) { results.push({ status: 'rejected' }); } } }
+  await Promise.all([worker(), worker(), worker(), worker()]);
   let all = results.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
   if (!all.length) { if (!news.length) $('items').innerHTML = '<div class="empty">Não foi possível carregar as notícias agora. Nova tentativa em instantes…</div>'; setTimeout(loadNews, 60000); return; }
+  const limit = Date.now() - CONFIG.maxDays * 864e5;
   const seen = new Set();
-  all = all.filter(n => n.title && !seen.has(n.title.toLowerCase()) && seen.add(n.title.toLowerCase()));
+  all = all.filter(n => n.title && n.date > limit && !seen.has(n.title.toLowerCase()) && seen.add(n.title.toLowerCase()));
   all.sort((a, b) => b.date - a.date);
-  // equilibra as fontes: no máximo 8 por site
+  // equilibra os portais: no máximo 8 por site
   const per = {}; all = all.filter(n => (per[n.source] = (per[n.source] || 0) + 1) <= 8);
   news = all.slice(0, CONFIG.maxNews);
-  const ok = results.filter(r => r.status === 'fulfilled').length;
-  $('count').textContent = `${news.length} notícias · ${ok} de ${FEEDS.length} fontes`;
   featIdx = 0; showFeatured(); buildTicker();
 }
 let progTimer;
 function showFeatured() {
   if (!news.length) return;
-  const n = news[featIdx % news.length];
+  const pool = Math.min(news.length, CONFIG.featuredPool);
+  const n = news[featIdx % pool];
   $('feat-text').innerHTML = `
     <div class="feat-top"><span class="src">${esc(n.source)}</span><span class="ago">${ago(n.date)}</span></div>
     <div class="feat-title">${esc(n.title)}</div>
@@ -355,7 +378,7 @@ function showFeatured() {
   if (n.img) { img.onload = () => img.classList.add('show'); img.onerror = () => img.classList.remove('show'); img.src = n.img; }
   // próximas
   const next = [];
-  for (let i = 1; i <= 8 && i < news.length; i++) next.push(news[(featIdx + i) % news.length]);
+  for (let i = 1; i <= 8 && i < pool; i++) next.push(news[(featIdx + i) % pool]);
   $('items').innerHTML = next.map(x => `
     <div class="item"><span class="src">${esc(x.source)}</span><span class="t">${esc(x.title)}</span><span class="ago">${ago(x.date)}</span></div>`).join('');
   // barra de progresso
@@ -368,7 +391,7 @@ function buildTicker() {
   t.innerHTML = html + html; // duplicado para rolagem contínua
   requestAnimationFrame(() => { t.style.animationDuration = (t.scrollWidth / 2 / CONFIG.tickerSpeed) + 's'; });
 }
-setInterval(() => { if (news.length) { featIdx = (featIdx + 1) % news.length; showFeatured(); } }, CONFIG.featuredEveryMs);
+setInterval(() => { if (news.length) { featIdx = (featIdx + 1) % Math.min(news.length, CONFIG.featuredPool); showFeatured(); } }, CONFIG.featuredEveryMs);
 
 /* ================= TELA CHEIA ================= */
 function toggleFS() { (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {}); }
