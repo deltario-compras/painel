@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Painel Econômico — Delta Rio Elevadores</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -426,6 +427,18 @@ setInterval(() => { if (news.length) { featIdx = (featIdx + 1) % Math.min(news.l
 function toggleFS() { (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {}); }
 document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'f') toggleFS(); });
 document.addEventListener('dblclick', toggleFS);
+
+/* ================= AUTO-ATUALIZAÇÃO DO PAINEL ================= */
+// Quando uma versão nova é publicada no GitHub, o painel se recarrega sozinho (verifica a cada 5 min).
+const VERSAO = '2026-11-16-3';
+async function checarVersao() {
+  try {
+    const html = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
+    const m = /const VERSAO = '([^']+)'/.exec(html);
+    if (m && m[1] !== VERSAO) location.replace(location.pathname + '?v=' + m[1]);
+  } catch (e) { /* sem conexão: tenta de novo depois */ }
+}
+setInterval(checarVersao, 5 * 60 * 1000);
 
 /* ================= INÍCIO ================= */
 loadRates(); loadHistory(); loadNews();
