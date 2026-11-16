@@ -252,7 +252,7 @@ const CONFIG = {
   newsEveryMs: 15 * 60 * 1000,    // atualiza notícias a cada 15 min
   featuredEveryMs: 15 * 1000,     // troca o destaque a cada 15 s
   maxNews: 250,                   // total de manchetes (destaque e letreiro)
-  maxDays: 3,                     // ignora notícias com mais de 3 dias
+  maxHours: 24,                   // só notícias das últimas 24 horas
   tickerSpeed: 90                 // pixels por segundo do letreiro
 };
 const FEEDS = [
@@ -454,7 +454,7 @@ async function loadNews() {
   if (!all.length) { if (!news.length) $('items').innerHTML = '<div class="empty">Não foi possível carregar as notícias agora. Nova tentativa em instantes…</div>'; setTimeout(loadNews, 60000); return; }
   // tira o título repetido no começo do complemento
   all.forEach(n => { if (n.desc.toLowerCase().startsWith(n.title.toLowerCase())) n.desc = n.desc.slice(n.title.length).replace(/^[\s.:\-–—|]+/, ''); });
-  const limit = Date.now() - CONFIG.maxDays * 864e5;
+  const limit = Date.now() - CONFIG.maxHours * 36e5;
   const seen = new Set();
   all = all.filter(n => n.title && n.date > limit && !seen.has(n.title.toLowerCase()) && seen.add(n.title.toLowerCase()));
   all.sort((a, b) => b.date - a.date);
@@ -523,7 +523,7 @@ document.addEventListener('dblclick', toggleFS);
 
 /* ================= AUTO-ATUALIZAÇÃO DO PAINEL ================= */
 // Quando uma versão nova é publicada no GitHub, o painel se recarrega sozinho (verifica a cada 5 min).
-const VERSAO = '2026-11-16-8';
+const VERSAO = '2026-11-16-9';
 async function checarVersao() {
   try {
     const html = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
