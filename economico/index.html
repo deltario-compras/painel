@@ -363,6 +363,8 @@ async function loadNews() {
   await Promise.all([worker(), worker(), worker(), worker()]);
   let all = results.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
   if (!all.length) { if (!news.length) $('items').innerHTML = '<div class="empty">Não foi possível carregar as notícias agora. Nova tentativa em instantes…</div>'; setTimeout(loadNews, 60000); return; }
+  // tira o título repetido no começo do complemento
+  all.forEach(n => { if (n.desc.toLowerCase().startsWith(n.title.toLowerCase())) n.desc = n.desc.slice(n.title.length).replace(/^[\s.:\-–—|]+/, ''); });
   const limit = Date.now() - CONFIG.maxDays * 864e5;
   const seen = new Set();
   all = all.filter(n => n.title && n.date > limit && !seen.has(n.title.toLowerCase()) && seen.add(n.title.toLowerCase()));
