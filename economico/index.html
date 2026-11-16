@@ -161,7 +161,7 @@ body:hover .hint{opacity:.7}
         <div class="feat-text" id="feat-text">
           <div class="feat-top"><span class="section-label">Destaque</span></div>
           <div class="feat-title">Carregando notícias de economia…</div>
-          <div class="feat-desc">Buscando as manchetes mais recentes em G1, InfoMoney, CNN Brasil, Agência Brasil, Folha, Exame e Poder360.</div>
+          <div class="feat-desc">Buscando as manchetes mais recentes em G1, InfoMoney, Estadão, Agência Brasil, Folha, InvestNews e Money Times.</div>
         </div>
         <img class="feat-img" id="feat-img" alt="">
         <div class="progress" id="progress"></div>
@@ -193,11 +193,11 @@ const CONFIG = {
 const FEEDS = [
   { name: 'G1',             url: 'https://g1.globo.com/rss/g1/economia/' },
   { name: 'InfoMoney',      url: 'https://www.infomoney.com.br/feed/' },
-  { name: 'CNN Brasil',     url: 'https://www.cnnbrasil.com.br/economia/feed/' },
+  { name: 'Estadão',        url: 'https://www.estadao.com.br/arc/outboundfeeds/feeds/rss/sections/economia/' },
   { name: 'Agência Brasil', url: 'https://agenciabrasil.ebc.com.br/rss/economia/feed.xml' },
   { name: 'Folha',          url: 'https://feeds.folha.uol.com.br/mercado/rss091.xml' },
-  { name: 'Exame',          url: 'https://exame.com/economia/feed/' },
-  { name: 'Poder360',       url: 'https://www.poder360.com.br/economia/feed/' }
+  { name: 'InvestNews',     url: 'https://investnews.com.br/feed/' },
+  { name: 'Money Times',    url: 'https://www.moneytimes.com.br/feed/' }
 ];
 
 /* ================= UTILITÁRIOS ================= */
@@ -309,7 +309,7 @@ function parseDate(s) {
 async function fetchFeed(feed) {
   // 1ª tentativa: rss2json
   try {
-    const j = await getJSON('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feed.url));
+    const j = await getJSON('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feed.url), 20000);
     if (j.status !== 'ok') throw new Error('rss2json');
     return j.items.map(it => ({
       source: feed.name, title: stripHtml(it.title), link: it.link,
