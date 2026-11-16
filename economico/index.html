@@ -251,9 +251,8 @@ const CONFIG = {
   ratesEveryMs: 60 * 1000,        // atualiza cotações a cada 1 min
   newsEveryMs: 15 * 60 * 1000,    // atualiza notícias a cada 15 min
   featuredEveryMs: 15 * 1000,     // troca o destaque a cada 15 s
-  maxNews: 150,                   // total de manchetes no letreiro
+  maxNews: 250,                   // total de manchetes (destaque e letreiro)
   maxDays: 3,                     // ignora notícias com mais de 3 dias
-  featuredPool: 40,               // destaques giram entre as 40 mais recentes
   tickerSpeed: 90                 // pixels por segundo do letreiro
 };
 const FEEDS = [
@@ -390,7 +389,36 @@ async function loadHistory() {
 }
 
 /* ================= NOTÍCIAS ================= */
-let news = [], featIdx = 0;
+let news = [], queue = [], current = null, shown = new Set();
+const keyOf = n => n.title.toLowerCase();
+// embaralha sem deixar duas notícias seguidas do mesmo portal
+function shuffleMix(list, prevSrc) {
+  const pool = list.slice();
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const out = []; let prev = prevSrc;
+  while (pool.length) {
+    let idx = pool.findIndex(n => n.source !== prev);
+    if (idx < 0) idx = 0;
+    const [n] = pool.splice(idx, 1); out.push(n); prev = n.source;
+  }
+  return out;
+}
+// monta a fila: primeiro as que ainda não apareceram; quando todas já passaram, recomeça em nova ordem aleatória
+function refillQueue() {
+  const inQueue = new Set(queue.map(keyOf));
+  if (current) inQueue.add(keyOf(current));
+  let fresh = news.filter(n => !shown.has(keyOf(n)) && !inQueue.has(keyOf(n)));
+  if (!fresh.length) { shown.clear(); if (current) shown.add(keyOf(current)); fresh = news.filter(n => !inQueue.has(keyOf(n))); }
+  const last = queue.length ? queue[queue.length - 1].source : (current && current.source);
+  queue = queue.concat(shuffleMix(fresh, last));
+}
+function nextFeatured() {
+  if (queue.length < 4) refillQueue();
+  if (!queue.length) return;
+  current = queue.shift(); shown.add(keyOf(current));
+  if (queue.length < 3) refillQueue();
+  showFeatured();
+}
 function parseDate(s) {
   if (!s) return new Date(0);
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) return new Date(s.replace(' ', 'T') + 'Z'); // rss2json (UTC)
@@ -431,20 +459,24 @@ async function loadNews() {
   all = all.filter(n => n.title && n.date > limit && !seen.has(n.title.toLowerCase()) && seen.add(n.title.toLowerCase()));
   all.sort((a, b) => b.date - a.date);
   // equilibra os portais: no máximo 8 por site
-  const per = {}; all = all.filter(n => (per[n.source] = (per[n.source] || 0) + 1) <= 8);
+  const per = {}; all = all.filter(n => (per[n.source] = (per[n.source] || 0) + 1) <= 10);
   // intercala os portais: 1 notícia de cada portal por rodada, nunca duas seguidas do mesmo
   const groups = {}; all.forEach(n => (groups[n.source] = groups[n.source] || []).push(n));
   const order = Object.keys(groups).sort((a, b) => groups[b][0].date - groups[a][0].date);
   const mixed = [];
   for (let r = 0; mixed.length < all.length; r++) order.forEach(src => { if (groups[src][r]) mixed.push(groups[src][r]); });
   news = mixed.slice(0, CONFIG.maxNews);
-  featIdx = 0; showFeatured(); buildTicker();
+  // nova leitura: notícias novas entram na frente da fila, em ordem aleatória
+  const valid = new Set(news.map(keyOf));
+  queue = []; refillQueue();
+  queue = queue.filter(n => valid.has(keyOf(n)));
+  if (!current) nextFeatured(); else showFeatured();
+  buildTicker();
 }
 let progTimer;
 function showFeatured() {
   if (!news.length) return;
-  const pool = Math.min(news.length, CONFIG.featuredPool);
-  const n = news[featIdx % pool];
+  const n = current; if (!n) return;
   $('feat-text').innerHTML = `
     <div class="feat-top"><span class="src">${esc(n.source)}</span><span class="ago">${ago(n.date)}</span></div>
     <div class="feat-title">${esc(n.title)}</div>
@@ -461,7 +493,7 @@ function showFeatured() {
   }
   // próximas
   const next = [];
-  for (let i = 1; i <= 3 && i < pool; i++) next.push(news[(featIdx + i) % pool]);
+  for (let i = 0; i < 3 && i < queue.length; i++) next.push(queue[i]);
   $('items').innerHTML = next.map(x => `
     <div class="item"><span class="src">${esc(x.source)}</span><span class="t">${esc(x.title)}</span><span class="ago">${ago(x.date)}</span></div>`).join('');
   // barra de progresso
@@ -482,7 +514,7 @@ function buildTicker() {
   t.innerHTML = html + html; // duplicado para rolagem contínua
   requestAnimationFrame(() => { t.style.animationDuration = (t.scrollWidth / 2 / CONFIG.tickerSpeed) + 's'; });
 }
-setInterval(() => { if (news.length) { featIdx = (featIdx + 1) % Math.min(news.length, CONFIG.featuredPool); showFeatured(); } }, CONFIG.featuredEveryMs);
+setInterval(() => { if (news.length) nextFeatured(); }, CONFIG.featuredEveryMs);
 
 /* ================= TELA CHEIA ================= */
 function toggleFS() { (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {}); }
@@ -491,7 +523,7 @@ document.addEventListener('dblclick', toggleFS);
 
 /* ================= AUTO-ATUALIZAÇÃO DO PAINEL ================= */
 // Quando uma versão nova é publicada no GitHub, o painel se recarrega sozinho (verifica a cada 5 min).
-const VERSAO = '2026-11-16-7';
+const VERSAO = '2026-11-16-8';
 async function checarVersao() {
   try {
     const html = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
