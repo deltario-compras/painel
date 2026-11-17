@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador de Precificação - Delta Rio</title>
+<meta name="theme-color" content="#08215A">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Simulador DR">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+:root{
+  --navy:#08215A; --navy2:#0c2c73; --navy3:#123a8f; --blue:#1a56c9; --accent:#3d9bff; --soft:#C8D5EC;
+  --bg:#eef2f8; --card:#fff; --line:#dbe3f0; --txt:#13213f; --muted:#5d6b88;
+  --ok:#14a36b; --okbg:#e3f6ee; --warn:#d98a00; --warnbg:#fff4dc; --bad:#d6374a; --badbg:#fde8eb;
+  --imp:#e07b16; --nac:#1a56c9;
+  --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+.hide{display:none!important}
+
+/* ---------- Acesso ---------- */
+#login{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:radial-gradient(900px 600px at 80% -10%,#1d56b8 0,transparent 60%),linear-gradient(160deg,#03102a,var(--navy));padding:24px}
+.lbox{width:100%;max-width:380px;background:rgba(255,255,255,.06);border:1px solid rgba(200,213,236,.22);border-radius:18px;padding:30px 26px;color:#fff;text-align:center}
+.lbox img{width:220px;max-width:80%;margin-bottom:18px}
+.lbox h1{font-size:15px;letter-spacing:.18em;margin:0 0 4px;font-weight:600}
+.lbox p{color:var(--soft);margin:0 0 20px;font-size:13px}
+.lbox input[type=password]{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(200,213,236,.35);background:rgba(3,16,42,.45);color:#fff;font-size:15px;outline:none}
+.lbox input:focus{border-color:var(--accent)}
+.lbox label{display:flex;gap:8px;align-items:center;justify-content:center;color:var(--soft);font-size:13px;margin:12px 0 16px}
+.lbox button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;letter-spacing:.06em;cursor:pointer}
+#lerr{color:#ff8b98;min-height:20px;margin-top:10px;font-size:13px}
+
+/* ---------- Topo ---------- */
+header{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;padding:env(safe-area-inset-top,0) 0 0;box-shadow:0 2px 12px rgba(8,33,90,.25)}
+.bar{display:flex;align-items:center;gap:14px;padding:10px 18px;min-height:60px}
+.burger{background:none;border:0;color:#fff;font-size:24px;cursor:pointer;padding:4px 6px;line-height:1}
+.bar img{height:30px}
+.ttl{display:flex;flex-direction:column;line-height:1.15}
+.ttl b{font-size:15px;letter-spacing:.12em;font-weight:700}
+.ttl span{font-size:11px;color:var(--soft);letter-spacing:.14em}
+.fx{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chip{background:rgba(255,255,255,.09);border:1px solid rgba(200,213,236,.22);border-radius:99px;padding:4px 11px;font-size:12px;white-space:nowrap}
+.chip b{font-weight:700;margin-left:4px}
+.chip.man{border-color:#ffc861}
+nav.tabs{display:flex;gap:2px;padding:0 12px;overflow-x:auto;scrollbar-width:none;background:var(--navy2)}
+nav.tabs button{background:none;border:0;color:var(--soft);padding:11px 16px;font-size:12.5px;font-weight:600;letter-spacing:.08em;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs button.on{color:#fff;border-bottom-color:var(--accent)}
+#drawer{position:fixed;inset:0;z-index:40;background:rgba(3,16,42,.55);display:none}
+#drawer.open{display:block}
+#drawer .pane{position:absolute;left:0;top:0;bottom:0;width:270px;background:var(--navy);padding:calc(env(safe-area-inset-top,0px) + 18px) 0 18px;color:#fff;box-shadow:4px 0 20px rgba(0,0,0,.3)}
+#drawer .pane img{height:30px;margin:0 20px 18px}
+#drawer .pane button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--soft);padding:13px 22px;font-weight:600;letter-spacing:.08em;font-size:13px;cursor:pointer}
+#drawer .pane button.on{color:#fff;background:rgba(61,155,255,.16);border-left:4px solid var(--accent)}
+
+main{padding:18px;max-width:1500px;margin:0 auto}
+.view{display:none}.view.on{display:block}
+h2.sec{font-size:13px;letter-spacing:.14em;color:var(--navy);margin:0 0 12px;font-weight:700;text-transform:uppercase}
+
+/* ---------- Cartões / campos ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(8,33,90,.04)}
+.card h3{margin:0 0 12px;font-size:12px;letter-spacing:.12em;color:var(--navy);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.card h3 .n{background:var(--navy);color:#fff;border-radius:6px;padding:1px 7px;font-size:11px}
+.card h3 .r{margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);font-size:12px}
+.grid{display:grid;gap:10px 12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.w2{grid-column:span 2}
+.f label{font-size:11.5px;color:var(--muted);font-weight:600}
+.f input,.f select,td input,td select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;outline:none;min-width:0}
+.f input:focus,.f select:focus,td input:focus,td select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,201,.12)}
+.f .hint{font-size:11px;color:var(--muted)}
+.f input[readonly]{background:#f5f7fb;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:#fff;padding:8px 6px;font-size:12.5px;cursor:pointer;color:var(--muted);font-weight:600}
+.seg button.on{background:var(--navy);color:#fff}
+.btn{border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer;background:var(--navy);color:#fff;font-size:13px;letter-spacing:.02em}
+.btn.sec{background:#e6ecf7;color:var(--navy)}
+.btn.acc{background:var(--blue)}
+.btn.ok{background:var(--ok)}
+.btn.sm{padding:6px 10px;font-size:12px}
+.btn.x{background:none;color:var(--bad);padding:4px 8px;font-size:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sp{flex:1}
+
+/* ---------- Simulador ---------- */
+.simg{display:grid;grid-template-columns:400px minmax(0,1fr);gap:16px;align-items:start}
+.status{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:var(--r);margin-bottom:14px;border:1px solid var(--line);background:#fff}
+.status .msg{font-weight:700;font-size:13px}
+.status .sub{font-size:12px;color:var(--muted)}
+.status.ok{background:var(--okbg);border-color:#b9e8d3}.status.ok .msg{color:var(--ok)}
+.status.warn{background:var(--warnbg);border-color:#f3d79a}.status.warn .msg{color:#9a6300}
+.status.bad{background:var(--badbg);border-color:#f3b7c0}.status.bad .msg{color:var(--bad)}
+.ring{--p:0;width:58px;height:58px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--rc,#14a36b) calc(var(--p)*1%),#e3e8f2 0)}
+.ring span{width:46px;height:46px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;color:var(--navy)}
+.prices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.pc{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;cursor:pointer;transition:transform .12s}
+.pc:hover{transform:translateY(-2px)}
+.pc::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:var(--c)}
+.pc .k{font-size:11px;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.pc .v{font-size:24px;font-weight:800;color:var(--navy);margin:6px 0 2px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.pc .s{font-size:12px;color:var(--muted)}
+.pc.alvo{background:linear-gradient(160deg,var(--navy),var(--navy3));border-color:var(--navy)}
+.pc.alvo .k,.pc.alvo .s{color:var(--soft)}.pc.alvo .v{color:#fff}
+.neg{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2fr);gap:16px;align-items:start}
+.bigin{font-size:22px!important;font-weight:800;color:var(--navy);padding:10px 12px!important}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kpi{background:#f6f8fc;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi .k{font-size:11px;color:var(--muted);font-weight:600}
+.kpi .v{font-size:17px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.tag{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:700;letter-spacing:.04em}
+.tag.ok{background:var(--okbg);color:var(--ok)}.tag.warn{background:var(--warnbg);color:#9a6300}.tag.bad{background:var(--badbg);color:var(--bad)}.tag.nt{background:#e6ecf7;color:var(--navy)}
+.tag.N{background:#e4ecfb;color:var(--nac)}.tag.I{background:#fdeedd;color:var(--imp)}
+.range{position:relative;height:38px;margin:18px 6px 6px}
+.range .tr{position:absolute;left:0;right:0;top:14px;height:10px;border-radius:99px;background:linear-gradient(90deg,#d6374a 0%,#f0b43a 18%,#14a36b 50%,#1a56c9 100%)}
+.range .mk{position:absolute;top:6px;width:3px;height:26px;background:var(--navy);border-radius:2px;transform:translateX(-1px)}
+.range .mk i{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-style:normal;font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.range .me{position:absolute;top:4px;width:18px;height:18px;margin-left:-9px;margin-top:6px;border-radius:50%;background:#fff;border:4px solid var(--navy);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.stack{display:flex;height:30px;border-radius:8px;overflow:hidden;margin:6px 0 10px;background:#eef2f8}
+.stack div{height:100%;min-width:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:11px;letter-spacing:.06em;color:var(--muted);text-align:left;font-weight:700;padding:8px;border-bottom:2px solid var(--line);white-space:nowrap;background:#f6f8fc;position:sticky;top:0}
+td{padding:7px 8px;border-bottom:1px solid #edf1f7;vertical-align:middle}
+td.n,th.n{text-align:right}
+tr.tot td{font-weight:800;color:var(--navy);border-top:2px solid var(--line);background:#f6f8fc}
+tr.hl td{background:#f1f6ff}
+.dre td:first-child{color:var(--muted)}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:70vh}
+.chk{display:flex;flex-direction:column;gap:7px}
+.chk label,.chk .it{display:flex;align-items:flex-start;gap:9px;font-size:13px;cursor:pointer}
+.chk .ic{width:18px;height:18px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:11px;font-weight:900;color:#fff;margin-top:1px}
+.chk .ic.ok{background:var(--ok)}.chk .ic.bad{background:var(--bad)}.chk .ic.warn{background:var(--warn)}
+.chk input{margin-top:3px;width:16px;height:16px;accent-color:var(--navy)}
+.alerts div{padding:8px 12px;border-radius:8px;margin-bottom:6px;font-size:12.5px}
+.alerts .a-bad{background:var(--badbg);color:#8f1d2c}.alerts .a-warn{background:var(--warnbg);color:#7a4f00}.alerts .a-info{background:#e8f0fd;color:#123a8f}
+
+/* ---------- Composição ---------- */
+.ckpi{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.split{display:flex;height:12px;border-radius:99px;overflow:hidden;background:#eef2f8;margin-top:6px}
+.comp td input,.comp td select{padding:6px 7px;font-size:13px}
+.comp td.det{font-size:11.5px;color:var(--muted);padding-top:0;border-bottom:1px solid #e1e7f1}
+.comp tr.it td{border-bottom:0;padding-bottom:3px}
+.w60{width:60px}.w80{width:80px}.w90{width:92px}.w110{width:115px}
+
+/* ---------- Proposta / impressão ---------- */
+#print{display:none}
+@media print{
+  body{background:#fff}
+  header,main,#drawer,#login{display:none!important}
+  #print{display:block;padding:10mm 12mm;font-size:12px;color:#111}
+  #print .ph{display:flex;align-items:center;justify-content:space-between;background:#08215A;color:#fff;padding:14px 18px;border-radius:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print .ph img{height:34px}
+  #print table th{background:#eef2f8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:8mm}
+}
+
+.simg>div{min-width:0}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:1100px){.simg{grid-template-columns:minmax(0,1fr)}.neg{grid-template-columns:1fr}.ckpi{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){
+  main{padding:12px}
+  nav.tabs{display:none}
+  .bar{padding:8px 12px;gap:10px}.bar img{height:24px}.ttl b{font-size:12px}.ttl span{display:none}
+  .fx .chip:nth-child(n+2){display:none}.ttl b{letter-spacing:.06em}
+  .prices{grid-template-columns:1fr}.pc .v{font-size:22px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid.c3,.grid.c4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ckpi{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .two{grid-template-columns:minmax(0,1fr)}
+}
+@media (min-width:761px){.burger{display:none}}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="lbox" id="lform" autocomplete="off">
+    <img src="logo.png" alt="Delta Rio Elevadores">
+    <h1>SIMULADOR DE PRECIFICAÇÃO</h1>
+    <p>Acesso restrito — custos e margens Delta Rio</p>
+    <input type="password" id="lpw" placeholder="Senha de acesso" autofocus>
+    <label><input type="checkbox" id="lrem" checked> Lembrar neste aparelho</label>
+    <button type="submit">ENTRAR</button>
+    <div id="lerr"></div>
+  </form>
+</div>
+
+<header class="hide" id="hdr">
+  <div class="bar">
+    <button class="burger" id="burger" aria-label="Menu">☰</button>
+    <img src="logo.png" alt="Delta Rio">
+    <div class="ttl"><b>SIMULADOR DE PRECIFICAÇÃO</b><span>COMPRAS &amp; IMPORTAÇÃO • EQUIPAMENTOS</span></div>
+    <div class="fx" id="fxbar"></div>
+  </div>
+  <nav class="tabs" id="tabs"></nav>
+</header>
+<div id="drawer"><div class="pane"><img src="logo.png" alt=""><div id="dlist"></div></div></div>
+
+<main class="hide" id="app">
+
+<!-- ================= SIMULADOR ================= -->
+<section class="view" id="v-sim">
+ <div class="simg">
+  <div>
+   <div class="card">
+    <h3><span class="n">01</span> Equipamento</h3>
+    <div class="grid">
+     <div class="f"><label>Família</label><select id="s-fam"></select></div>
+     <div class="f"><label>Paradas</label><select id="s-par"></select></div>
+     <div class="f w2"><label>Modelo</label><select id="s-mod"></select></div>
+     <div class="f"><label>Quantidade</label><input type="number" id="s-qtd" min="1" step="1" value="1"></div>
+     <div class="f"><label>Contingência sobre custo %</label><input type="number" id="s-cont" step="0.5" value="0"><span class="hint">colchão p/ variação de custo</span></div>
+     <div class="f w2"><label>Fonte do custo</label><div class="seg" id="s-src"><button data-v="tab">Tabela de custos</button><button data-v="comp">Composição (nac./imp.)</button></div><span class="hint" id="s-srch"></span></div>
+    </div>
+   </div>
+   <div class="card">
+    <h3><span class="n">02</span> Operação / tributos</h3>
+    <div class="grid">
+     <div class="f w2"><label>Cliente / obra</label><input id="s-cli" placeholder="Nome do cliente ou obra"></div>
+     <div class="f"><label>UF destino</label><select id="s-uf"></select></div>
+     <div class="f"><label>Destinatário</label><select id="s-perf"><option value="nc">Não contribuinte</option><option value="c">Contribuinte ICMS</option></select></div>
+     <div class="f"><label>Finalidade</label><select id="s-fin"><option value="uso">Uso / consumo / ativo</option><option value="rev">Revenda / industrialização</option></select></div>
+     <div class="f"><label>ICMS interestadual</label><select id="s-inter"><option value="auto">Automático</option><option value="0.12">12%</option><option value="0.07">7%</option><option value="0.04">4% (importado)</option></select><span class="hint" id="s-interh"></span></div>
+     <div class="f"><label>Cálculo DIFAL / FCP</label><select id="s-dif"><option value="dupla">Base dupla (LC 190)</option><option value="unica">Base única</option></select></div>
+     <div class="f"><label>Redução BC ICMS %</label><input type="number" id="s-red" step="0.01" value="0"><span class="hint">ex.: benefício por NCM</span></div>
+    </div>
+   </div>
+   <div class="card">
+    <h3><span class="n">03</span> Custos da venda <span class="r">R$ por equipamento</span></h3>
+    <div class="grid">
+     <div class="f"><label>Frete até a obra</label><input type="number" id="s-frete" step="10" value="0"></div>
+     <div class="f"><label>Instalação / montagem</label><input type="number" id="s-inst" step="10" value="0"></div>
+     <div class="f"><label>Garantia / assistência</label><input type="number" id="s-gar" step="10" value="0"></div>
+     <div class="f"><label>Outros custos (ART, projeto…)</label><input type="number" id="s-out" step="10" value="0"></div>
+     <div class="f"><label>Créditos adicionais comprovados</label><input type="number" id="s-cred" step="10" value="0"><span class="hint">só se não estiverem no custo</span></div>
+     <div class="f"><label>Outras despesas variáveis %</label><input type="number" id="s-vari" step="0.1" value="0"></div>
+     <div class="f w2"><label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="s-extok" style="width:16px;height:16px;flex:none"> Frete, instalação e garantia já estão no custo ou não se aplicam</label></div>
+    </div>
+   </div>
+   <div class="card">
+    <h3><span class="n">04</span> Condição de pagamento</h3>
+    <div class="grid">
+     <div class="f"><label>Entrada %</label><input type="number" id="s-ent" step="5" value="100"></div>
+     <div class="f"><label>Nº de parcelas</label><input type="number" id="s-np" min="0" step="1" value="0"></div>
+     <div class="f"><label>1ª parcela (dias)</label><input type="number" id="s-p1" step="15" value="60"></div>
+     <div class="f"><label>Intervalo (dias)</label><input type="number" id="s-pi" step="15" value="30"></div>
+     <div class="f"><label>Custo financeiro % a.m.</label><input type="number" id="s-tx" step="0.1" value="1.2"></div>
+     <div class="f"><label>Prazo médio / custo</label><input id="s-pm" readonly></div>
+    </div>
+   </div>
+  </div>
+
+  <div>
+   <div class="status" id="st"><div class="ring" id="ring"><span id="ringv">0%</span></div><div><div class="msg" id="stmsg"></div><div class="sub" id="stsub"></div></div></div>
+   <div class="prices" id="prices"></div>
+   <div class="card">
+    <h3><span class="n">05</span> Preço negociado <span class="r" id="negr"></span></h3>
+    <div class="neg">
+     <div>
+      <div class="f"><label>Preço unitário s/ IPI (R$)</label><input type="number" id="s-pn" class="bigin" step="100"></div>
+      <div class="row" style="margin-top:8px"><button class="btn sec sm" data-set="min">Mínimo</button><button class="btn sec sm" data-set="alvo">Alvo</button><button class="btn sec sm" data-set="ab">Abertura</button><span class="sp"></span></div>
+      <div class="grid" style="margin-top:10px">
+       <div class="f"><label>Margem desejada %</label><input type="number" id="s-mc" step="0.5" placeholder="calcula preço"></div>
+       <div class="f"><label>Desconto s/ abertura %</label><input type="number" id="s-desc" step="0.5" placeholder="calcula preço"></div>
+      </div>
+      <div style="margin-top:12px" id="negstatus"></div>
+     </div>
+     <div>
+      <div class="kpis" id="kpis"></div>
+      <div class="range" id="range"></div>
+     </div>
+    </div>
+   </div>
+   <div class="card">
+    <h3><span class="n">06</span> Formação do preço <span class="r">por equipamento • preço negociado</span></h3>
+    <div class="stack" id="stack"></div><div class="legend" id="legend"></div>
+    <div class="tw" style="margin-top:12px;max-height:none"><table class="dre" id="dre"></table></div>
+   </div>
+   <div class="two">
+    <div class="card"><h3><span class="n">07</span> Assertividade do preço</h3><div class="chk" id="chk"></div></div>
+    <div class="card"><h3><span class="n">08</span> Alertas</h3><div class="alerts" id="alerts"></div>
+     <div class="row" style="margin-top:12px"><button class="btn acc" id="addprop">+ Adicionar à proposta</button><button class="btn sec" id="gocomp">Ver composição</button></div></div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- ================= COMPOSIÇÃO ================= -->
+<section class="view" id="v-comp">
+ <div class="card">
+  <h3>Equipamento analisado</h3>
+  <div class="grid c4">
+   <div class="f"><label>Família</label><select id="c-fam"></select></div>
+   <div class="f w2"><label>Modelo</label><select id="c-mod"></select></div>
+   <div class="f"><label>Paradas</label><select id="c-par"></select></div>
+  </div>
+ </div>
+ <div class="ckpi" id="ckpi"></div>
+ <div class="card">
+  <h3>Composição do custo líquido <span class="r" id="crev"></span></h3>
+  <div class="tw" style="max-height:none"><table class="comp" id="ctab"></table></div>
+  <div class="row" style="margin-top:12px">
+   <button class="btn" id="c-add">+ Item</button>
+   <button class="btn sec" id="c-tpl">Inserir itens típicos</button>
+   <button class="btn sec" id="c-copy">Copiar de outro equipamento…</button>
+   <button class="btn sec" id="c-rep">Replicar p/ outras paradas</button>
+   <span class="sp"></span>
+   <button class="btn sec" id="c-clear">Limpar</button>
+   <button class="btn ok" id="c-use">Usar composição no simulador</button>
+  </div>
+ </div>
+ <div class="two">
+  <div class="card">
+   <h3>Parâmetros de importação <span class="r">valem p/ todos os itens importados</span></h3>
+   <div class="grid c3" id="impf"></div>
+  </div>
+  <div class="card">
+   <h3>Parâmetros de compra nacional</h3>
+   <div class="grid c3" id="nacf"></div>
+   <div class="alerts" style="margin-top:12px"><div class="a-info">Custo líquido = desembolso (mercadoria + IPI + frete) − créditos aproveitáveis (ICMS, IPI e PIS/COFINS no Lucro Real). Desmarque "Créd." no item quando o crédito não for aproveitável (ex.: uso e consumo, fornecedor Simples sem destaque).</div></div>
+  </div>
+ </div>
+</section>
+
+<!-- ================= PROPOSTA ================= -->
+<section class="view" id="v-prop">
+ <div class="card">
+  <h3>Dados da proposta</h3>
+  <div class="grid c4">
+   <div class="f w2"><label>Cliente</label><input id="p-cli"></div>
+   <div class="f"><label>Nº proposta</label><input id="p-num"></div>
+   <div class="f"><label>Validade (dias)</label><input type="number" id="p-val" value="15"></div>
+   <div class="f w2"><label>Condição de pagamento</label><input id="p-cond"></div>
+   <div class="f w2"><label>Observações</label><input id="p-obs" placeholder="Prazo de entrega, escopo, exclusões…"></div>
+  </div>
+ </div>
+ <div class="card">
+  <h3>Itens <span class="r" id="ptot"></span></h3>
+  <div class="tw" style="max-height:none"><table id="ptab"></table></div>
+  <div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn sec" id="p-clear">Limpar itens</button><button class="btn sec" id="p-int">Imprimir (interna c/ margens)</button><button class="btn" id="p-cliprint">Imprimir p/ cliente / PDF</button></div>
+ </div>
+</section>
+
+<!-- ================= TABELA ================= -->
+<section class="view" id="v-tab">
+ <div class="card">
+  <div class="row">
+   <div class="f" style="min-width:160px"><label>Família</label><select id="t-fam"></select></div>
+   <div class="f" style="min-width:220px;flex:1"><label>Buscar modelo</label><input id="t-q" placeholder="ex.: 600kg, porta china, PC-800"></div>
+   <div class="f" style="min-width:260px"><label>Cenário fiscal</label><select id="t-cen"><option value="ref">Referência da planilha (ICMS 12%, sem DIFAL)</option><option value="sim">Operação atual do simulador</option></select></div>
+   <div class="f"><label>&nbsp;</label><button class="btn sec" id="t-csv">Exportar CSV</button></div>
+  </div>
+ </div>
+ <div class="tw"><table id="ttab"></table></div>
+ <p class="hint" style="color:var(--muted);font-size:12px">Clique no custo para editar (fica salvo neste aparelho e marcado com ✎). Clique na linha para abrir no simulador. "C" = equipamento com composição cadastrada.</p>
+</section>
+
+<!-- ================= PREMISSAS ================= -->
+<section class="view" id="v-prem">
+ <div class="two">
+  <div>
+   <div class="card"><h3>Política de margens por família <span class="r">margem de contribuição s/ preço</span></h3><div class="tw" style="max-height:none"><table id="mtab"></table></div></div>
+   <div class="card"><h3>Parâmetros fiscais e comerciais</h3><div class="grid c3" id="fisf"></div></div>
+   <div class="card"><h3>Resultado e câmbio</h3><div class="grid c3" id="resf"></div></div>
+   <div class="card"><h3>Backup e compartilhamento</h3>
+    <p style="margin:0 0 10px;color:var(--muted);font-size:13px">Premissas, composições, custos editados e proposta ficam salvos neste aparelho. Exporte para levar a outro computador ou celular.</p>
+    <div class="row"><button class="btn" id="x-exp">Exportar configuração</button><label class="btn sec" style="display:inline-block">Importar…<input type="file" id="x-imp" accept=".json" class="hide"></label><span class="sp"></span><button class="btn sec" id="x-rst" style="color:var(--bad)">Restaurar padrões</button><button class="btn sec" id="x-out">Sair</button></div>
+   </div>
+  </div>
+  <div class="card"><h3>Matriz tributária por UF <span class="r" id="ufr"></span></h3><div class="tw"><table id="uftab"></table></div>
+   <div class="alerts" style="margin-top:10px"><div class="a-warn">Alíquotas internas pré-preenchidas com a tabela geral 2026 (fonte: Focus NFe) como <b>referência</b>. Para preço com confiabilidade máxima, valide com o fiscal por NCM e marque "Validado".</div></div>
+  </div>
+ </div>
+</section>
+
+<!-- ================= MEMORIAL ================= -->
+<section class="view" id="v-mem"><div class="card"><h3>Memorial de cálculo, regras e limites</h3><div id="memo"></div></div></section>
+</main>
+
+<div id="print"></div>
+
+<script>
+'use strict';
+var PAYLOAD='eyJzIjogIjZTUkN6MUZ2a1pBcWJLV1RIbnZBZ0E9PSIsICJ2IjogImN0ZTQwQmR4d01Lc254UGkiLCAiaSI6IDIwMDAwMCwgImMiOiAibDE4LzFHZXh6UzY3MW5VM1g3ckhXSWtaMTM0cFpxNVRvTWZ4ZE5BOGFoMlhaSnExc2ROMXpmZHA3SFlpZnhvblFnNXdsaUdGY2VjUHcybERqcVdMQlA5ZU1Ybi9iancvVG9ldzMvdVd1TFJvU3Y5SkpXVjhsczRaTzJLK01JRHQ3WDFFVEFnU1U0VzFGVFB1L3FrOEtXbUFIU1luZ1l6eXlxZWIzL3NUV0owcG1rM0Z0MWw1U0p1ck1UUjdLRXBkSTRSNTM4bVVkL29GeGw2M1Z1a1Q4ODZrWWFkQTFvaDhwV2xqT2NLTWs3dGQ2TWlCR0JrQncvOTZFbnZjZ1hldGcvb1hkTU1weDF1OUVHdXlGUkpvaTMvZUlPd0FZeWlBTWpCL3l5MmRJMjNoZkxqUkR3YXBvMTVwVmtqanY4T1RDS0pBYTBFanJhWXFETmFNVUt3M01IdTRxd1p4QjZud0dHTkNNUXhGR1VjMi9iUlpHbDVHQlB3Q2RoZjVsU3lUU0RwMTgvT3JhU2F0MnZ5djJFTUxmZ1M5cExVeWFIUUlOS0lTaDNNM3VtMWlHQmtnSXJXcmUvVXlUeHppSzFNQzFoUUdFK010NkpRcGo0bGxqZ09FdnM2c09VTlhWNC9HcXlSLzBjTW5hMm5oMzVPTU1LQ2dMSkZYd085allOdkZ4dVljekpxWU54aHVUaS8zbzRvc043bk05cWJWYUR2NjEzdVArdzE0NFhYSUQxdmw3MFBPQ2FCLytQYTBuUGYyWkpnV0tHKzRMdVNCNzhKYzgrSnlRYktnUHYvZ3NNU2kxK0puREJSYzVHTjhIWXhlclpKWDZPSUJ0clZzSzhpdnJrVTFCZk5Fb1BjL0VDbFZ4Umc3d1lQaDIwYldtaDRZL0JMdmRVYkJKS2tnNGpLNlMzQ0lOSDdqQ0Z3MHNUa0lEOVhnclZzSUNHQ3V4K3VmaW1WT0VBOXp3dkgzQ1hEOWQrMjI3SEhuK2dsbDd4dzVuKzkwUWliSExpVmJPbGNaK2UwcnB3Y1lXa2J4bFMyb0dRT2lVeXF5WjA4VXZsVEkwWFJtZWVGSmp2M0FnZUd4TS85U29BTjkvQ25YV2VHbkxlaWI1SnRGdzVXYTdjaFZPc1RLdmcyQjk3TjZ5VFVtQmU1YThCSFBzZm1rNGJZWWQvY2JPc3Y2RDRjaHNOT2FoNDAycnFzd05IMitENGk2VFlva3J4WWlFT2xPOFVrVFRyRnEyVFpxOE9UV0lnVFYzWmVidVFYeEU4b3hlTUs5aC9EeXpVU0h0VEVGYWZQaXpiRW5CalVLZlA4SzVISzZwN2pTQkxZUStyb1oxZzNyZWRWQ09RMVVtZVRNTlNKRDc3dW0wTng4QnJHclprOGg2QjNqL3orU3dLOE5sOExRZ2xuclJJd1c4VzRid1pRdzE0YXVxWWNpaVdqWkx5V3U5MlhzK3l1SWFtWFB2WXkzRGNwc0NUM1Arb1YvZ1ZOTUlad096b1BJZGwrb0QzYndBS3ErUG16T2FpTmZMRDBUK043ZzRHcHNlSVJqTWJxMFRjVkNmc3dDeXhlZHVOQnlkd2psK2hKRzdVRVpWY0ZVYlgybE5XMzlrNkVIa3pJWU5GN25salo4VlI0K1JLb2x6c29mVjZMQk9pd0VJTExBUFc1eGxnMlpJQkl6K3JoOFFDOVltbGNrYnlNaXFDVEUvUnV2MFNIQnVJQTAxem5yWjN1Z1d4dlNITkRxQWR6aHozaytnajdPQjU3eUxzOEhTYUV0V285d09QVldzZkhHM1lIblMwTDFsMnQ3Z1hveURMbWxSRFNaV0Q5eGorQStoYkM1VnppQ0tCL3ZsRWxWaFh6czN2Nlhma0VwcmdZSm9vdGc2RE1vK1RYYVBTVVF1TUEwTnRndk9NY2pyZk5CSndUQ0UrUXFvaTY5UXNZVWtsNlFoS1JISGhrdThNdmFBRS9RUUZLbVR3STR0b1lmMmlXSGNpSVcvTkNWTHpPQkI3TFFXL3ZpQkp6eEhtWXNheWVYdDJCdGF2bDBhMFpYa2xpaFhCK2NOQkxRd0Q2bnZVRDBLZFFNQTBwS2lIWlo0WjlORmV2UFhjelhmalJ2SDJ3dFJaRisyNnZINEtnOVZ1bS9xdWdMZTgzelBzOTN4dndxaEZlU09qM1M1U1VjdUdvRi9Rd3hydkxYZWk2WURPRm03TUk4N09YSnovVkswUFJieVFjVE1DdUFQNmdOV2ZKR3V3QWhDTnRLek1acVFNT25MZVN6Slh3MEFtaDN1bVp3TW1iZ1VyVmcyTHhGeDgreXBnTzFZb0lWMHVOWStOR2NsN0t0VlY2MW9pa0ZWeVpMR2RDdFQ5YTFWOXhlN1pjMlFGWk9mV0hqMENCcG5GbFkxY2tiRHVBM2RtR2pRNGVnR1BIMkVqZ3VoTWdLL3A1bUhBeDAwZDBqeEhzdG04dEJuR2RmMnVpcEE3RmZyZnVKSHFlTy9aS2hHRWpVT2RCMHA4Sy9ZNi90Q3l3Y1p6Z0VPQk9OVUpENjlkUEpXWk9XaGhzdU5zdU12d1h6TTBTY2dlU1N1dlQ2TStGZ1ZCZUJTcGhCYTUrZm94WGZGTlNWemE4djY0Q2JrVzhVakM1bjd2NFdvSXEvbVRkUzJyeTJKcThqQWhhbkhobDUwd0JLYWRVdVZwRm1nc2NjTFR5Qm5tZlo5QnNHbmlDYXluRXl4RXFqYUNmdDU2L1RGU3F2WTF6a0p5TE8vWEFndC82WTNuU3VMeVZ0SDFWZW9wVnV6M3d6Q0JTN0VmNHRaWDVDWk9lanBWVTRxTUhObTFyT3hXUnNHWmJqT1F6QzNrUTZEZEhpdjhweUo3YWpHQzI2Mk4vOWlMQmhXaFN1aGgyUTVWQ2tMUzNpSzlXa29oQ1E3QlZEZEYxQjNkLzVRRHNqU0NnUWhiSnhQdVYvelM0dkVuYjR0RkNvM21kQUVBUENyMzR5SUNSMXdEMGxwbm5VUmJsM2J2VmRKM2ludzZOc0JCcmhTV0d6Y1FEcDZqZDMrcE9oV0lNS0NzUnBCWGJrRC8zczFhZ2NWUUhBZHdQQTZsR0dlYTFSRlhqL095MEJWNmZObTdqLzB3MXZ0amNvZElIWmV1NC9FMUNuUDJ5cmJGT3VGYi80UmNLejFiVW15NktMSDcvYzVROGJkL3pIS29sVFVMUGo1RWRxRUdZUzlTcDBtSEp2S1RzZ2pmZlhKZWhoY1dCTlN1MFBzSDZvUnlXOEl2OXVYY0JXU3lkYjBlYzVBak1BUkY2eTh5YjJpRHk4NDVMVXZPWXd1MUpyZ3Ryb3lqWFgxOXlqdkFuOFpOc1NzUnRERUxtdmgvcXFwNXg0d1dRZ09iMGtTaHp1UkY4Slh6dm5NNGNoVXVlSDZKT1cvV2JPNHY0bTlZVXBhREluaVJia3ZiT0hoNG55VStiQWRXaDJBcDFkQk9KSUNPbEJUTERtTzRqT3RwOTJrYVhqRWlVUzVobDR6WDNGeWRxYUlZbCszZ2FWZVhhRWRPZUtWQWsvd1BDMDJXSVByeTdnRDBhaEpDeVFDaWxEcTBJYjdVK1p6Lzl6OEVJc2VWOGpkM0R4cTI0TGhQZWNWRlFLeHR1azRRYmpHZDRMMkplWkcrd3JYcjA1ekdYZ2xUQ1NqdkcvSFMyVi9OV0g0UUtxN09LbHNhUWx0d01tanJNUFNDdlFpNkFNaHNFUkdkOGhHVllSYTJCdHcxbEswaVZONFo5QXMyUkZwRzZRRFUwODJINDlSVmU2WGYwZ1dKcUNsWkFlV3V3UU5jL3I4clFHcmtrR3FUeUV4QlVOdmFOVWxWaHovT1liM1UrMzFudEk4ODVRR2ltVjRpYXFWQmFkVGVBVkpJN3VJUW9PUHdndWVEK0dWTGlwZ0dsbFpvdWJmaEhTcm5Wc1ZTVlV1MkY0MEd5ak9ZYzZpamhhYjRlVCtrNnNJMHdMdWhQODlGV3dtSmFJN0ttSlNDckcwSDFoU0xhaTdOT1pEUUNRTGhTN3d4LzdyREVYVjhSWWVEOWJuZC91dnZxNC81bm16UjhHWldqUnpoNDRzZnVSTk1IZlVVRFVRcHBIaUQzVmp5UWltQkpmNXFtbkJaellNYktwSHpxSnNaRldkazJicjJhcTRERVZERWdTa243b0JYWmVhbHpsMHpkVUZzN1F6UjBBZi9TVUpRRDF1YldvRmJoOUJZdHZPZGlUM05pS21pdUFRTUppQU8xd3YwVndhNTl2QXZQVWZRU29WQlk0UTl4ci9MRmR1MDJyeGU0a0pWRGJpVTNMNmxaVFJ1aWx6WHRrS0szb1VRY1VMWnJhWDZTSkcvYmx0VC91c0t6QzZ2S1UvdGx4bEthTnY3Q3p0aGVXdWV4YUQwLzJDMGJTWW9EU0ZjdEt3U1dWQnRNWDdyMDV0UFpZS1pIMmhRSTVSTzNaMmxaeHluc2dpem1BVE5jUnA3bXNtSUd4WmI5MXQ0WE9icm1sWm1PTFJ4NVhST2g0WXVkYmd3TVM4RlVFSURrVlU3cm5KVGJZZ1ZMOStVTnFmeUpwY2hyaDZsNk1EQnRtTmRuYU42L1MyeHRvdWU5TVpLOE5GZWhFNW5uWm1oYy83WlczTnE5VXpqV0NVZ1BCSHpVamU5NjgzRC9MMkdvSllVTnRUN2hwRlg1ZEdlY3QrOEd5TGdjRTZwQlRzZnZZNEQ5Z3pzSWw5RjF0VHFJZUl3eFVsK1hNTERubXExUTdyQ1R3L05aZWtzNVI3RUFnWldiWFBNVGhqNjdjd2dmL3lPZnNiNCt6MmNyNHVBL1RYRVRxcWpjVk53M3Fja2pEU0I3QzRMSmtNdncvWnR1aGJPMFhHT1prbXE0VVpzUnNrc0k5ZnkwdXVDNlZWSDV0alYxeGxZank2YkszdWpKUFJUamhCNUdUOW9KQXdNVU9CUWJ4bVJNaXhZOEFMbnhkQmU5L2NDMS8xamR6cnJnK1pDbU9sMlRSMW1JL0sydmIwVjl2QytUNEZWNStSYkpOcU53OXphdDBIS2VzVDM3Y21GbW5ZTC83QStXQ01HU1RoZUNwbndyZnduckhnSUxzOU0vc1hqVjAwQldVOUhONWxENlRXWW5zUkxGZE5LRlBTb3c2VysrTlNzcVpQVGV1bG95d1l1aFdSNlJZcC9CaUhJVjVTRTRtalJqUU9yT0pQdnNRdW4vSHIzRDMyKzRZK0JTYk5WbEZ5dUUwWDN2VlcrRkFTeWVWeVhjUzIrOXc5ZVBMeDZsdzBmT1ZyZlVIK1gvUVRHZERkVnlXS0lGTjJHd2tPdzVDRDQrRC9NNXlNME5hWjNWbHZQVFl1SXNEQVhDQ1FRZUUvY2lRTm9ZMmN6MHF2eWo2V2tBYzF3Wm56cEYxdWdOQk1wRTBvMCt6YW9xMVJodEdhQTZlemdFZUlBazdUazNxQmYzWVJlckcvMjdnMkVhYzYzbC9yQ3hDNmpGM0VqQzZQZkw4L3JYYWRhdFRQSGtmaGNYVlYrM1VBZVBwdldremduanJ0QTRoSUo3UnBaMXhrclRNNGo5dkw0R25qRlU1ZVYxK3ZhWVZGU05Pa3YxaWFucG1jcGF6VlZWSHZnWVRwNzZUVDAxckpMRzF2L1ZnWWN6QmpxTHdLei9CakVEa0lZakFxU2J0b0R6dVQ4ZFlrRVZDTWZidXYrWlhwblpQVXdSVG53WGhubC9CRTg2VWQ2c1h2R2NncStWcDV0WU1mZDExRGhlV2RNY3JsQ1dNMm1VcUV6WEV4Z2drVHU5LzUrVWhzTmdxVVFKc2hRaEllSVUxRk8xMFBzSXF6cFlCbFBTWkdrYXZzUklpK1F5SHJEZkNieldPeXdOWlpIWmpqcWtJNXBvUXJZakpGYzF3UFRFNFRsZDNoVjRmUVE2NFZadC85azloWHljMU9mam5sMTF4L3lzL0ZsbWlkQTRjdHo2ZGxJWGx5TTE4aTA1dVcwTU5ySmo4WnNDMnFZbVFONmo3V0VCQjBYUkc1WW9rUjNwVzJQZXB5bG9pT00yUk1sc1p0eFlZT3pQalRwR1E2Q0x6MTFmOTNRZ0d4eStTUnFSU1ZYV2NCZUNmdzRJQW5abTU2WE00aU1DdytvaDMyakhGcnFzOGdIVDA0Z0tYZW5CQ0NoQjY5bWpEU0hXU1RSWHlIdG9DZ01vZ2dmSlV5YkwzcjlNdHVpdGdXMUpWRzZTVVB6TExOR3hMNFRzcVBQQ0I3UTVEU2VYTkNpeUZaajZHYzZkZTlSRXUxc1ZEczdZN2IwbFIzQW9ySGxncE51ajBtUEFtR0FidW1NcEQxc2xKdmdyYnFTYkxnQVI0c1hRVVBnTkxteitLNWZOK3cxY0toUWpwem9zRG9MTUY4UytQUGRFS3pnRjBiRzZpUlEvbWI5dFNWcWpOeXBNb1JDam5hY0FBT3NLNERVZnNYWlJDdFlUTWljK2JiMnQyRHp1SGNSUHZSMTdXSnhOaGdpdVRCa1hHOUZ3NzQ3cU4veU1xQ2VRaHZmdU1ja2FreWNNQ2dYUS8wSEFobWp4Q1E5S1cvR2hxVTJ2UzBZWURYWnZXUTBkeG9nZ0ZRQXFlWFVKZGQyMHF0RmdmeGx4cmlNWDdZZXczd3h6UjVzTDRnWjFtaW0rZEo3dnNrMEl5amV1eWhJbkllTnJGa1poRGVTT3FlOXU0OXVMa0Q2c1BSUUdNcmhGek1NN3NWcUxsbEhhQytKZTNOZ0NJbzBDWW55N3J4NFluSlRwU1JkVzhOY1c4c21BQjZudWJjT21BbFVYMEIzcHk2c0ZqOEFEY1ZoL3Rzcll1WkQ4bHQ2NlNhcE05NHA1NUlYRzVxekI4VksrNUZUcVdUY3lkMEd0aVZhbThqZVVvRXFISjZvNXB5U0FxTnUyU09ISDdYNVZXS3BHZDdodDhFZmZRSFFvdldQUk5CRlpRV3JMdWNKWlZrVXJiSStTdklIeDlvbUMxcVFFR3h0YlZOVnJneXBZL2p1MFpQM09RT3ZSLzlsOTIxQ2dpVEprN0syeHFyM01SbVJVWlREd3RXMTN6cTdQZytwcWVkN1R1dmErYlp2UG5NeDkxc3NzWjYyc2dBSlhjOTQyb1JZaUZ4SUJGZ2hzYWx0eHU4RFBHdnJCNE8wWWZKREg2WW50cUxWUkFXejlnLzFWY0JXS2lRLzJjM2h1U2FJeE1pQUV6ek5jYURidjJZMWJYdzZNZ2FvRnRONUxOTm9RSTJWWXRkQ3lObXBEYjYwRUVVQWNQd0hzZG80NWNZQ2NIUTRtOHAxRjJkbXFpRnV2dkNqWTBQWlBvR25PWVBsMUtWSzRTYnNHTkpydzdBUGg0WGNBSnJvc0c0bU9KL3FrZjVwQ2xUYUNjYjNBY254R2ptYUpiTkxKTTZCanQvSWJUejNKUk1ucGtYZkVjeTlDMGpXSCs4Y2dXemZwV3cxTlpnaHRYNzdNWGk1NW91dG1BY3pQUTQxL0lPOWErbDZmV3h1dnVqenhwVnRiRkY5bkVKdnphdk5xVGR2NDFZTXZPUjgvOUU0N0FSZ2VITkZBSmI1RVZuYncyZUJaSzByV1pXUUh4eHZBOEJROWRCc20xY2hFNEJmYXY5Mzlid0JQM215SEg3cFMwWjdiWHZ4bHRpTFZnNXFick9LUWErNWx6VU1oK2VVenNacVVMVFJOeDV2blVSeTJjaG9MWjZ4N2E2dlMxb3JVWUJtTjRKc3JONzlBZ0xYdDVHTjh1dzZJZkZIRjJFMFc1Tkd3VEIzNTlnb1paME04TSsyS0F5cEdOZUNwaDQ1Qy9wY3pwZVFXVmFjdTNJcFR3SnZVTWdmT3lhcm03WW9ESnpNL3ZIZ2ppa2dZRlRRY0k2bnJTeEEzMVZsYTRVaStwUWYwQmdRVUlXTXphYmQ5SE1za1lhTlV2YzVQQTcvQVEwOVZGNE8vQk9LbEV5OTJ0WEdnelRiZnZCbEtHV0JBYWlHM3pGSGZ3SFJ0dnV6QnRhNnExRzNiRFNaNmlrUzkyMmFtVW5PbGVHS1dsU3hkc0JwR0Qyak5kNnhEZDBPaHEwWkpSK3N0ZFNVK1YxTkY0T25iZVBzVlg2aHRWUGJzUUJFKzJqT3VxRERRL1picmtnK2xNaFlGdmQ2WndCL29wb2kyVmlLMVdwbS9tQVdTN1lhMmNhcng5QXJTRmJNc0VRNEF3allXaG90aGVzZjhvbWV4bi9ra2hpbnlvTGYxRGRldGpGVS92Z0o2Z3orbTJPczc5SUw4a0FIZExNbm9pdVlKckNkWFppMHo2TnUzZUZyUXdWeFV0TWRpRStaTE5zdHg5cnpPeWg4ejBzQ3Bhc0srY1BGdzlBcUNBQWhTVzA0VmduS2JRZzVjTFdoRE5nVC9FRGY5VWFaMUIvaXRYWUVQT3VhcXgrUk44ODY3aGFMRFpsQVhOek1FaklmQzBadUJHZk5lSy81OVdjdWtjS1ZRcEdoUHdacGptSTczZmVYMWxXa1ZNUEh4dC9BWHBjWnhOYUQ1Y2lpT1RHUHBJRGFrOUFYUnpicDZldFVqQnkzYVFDNFdIbU1STzMvaGpwb00vb0tuUFFhbG9OQytVVmd3S2RxSks4a0xOMWdxR0pIZTY5ZUlMaWFmeEhTQ0hSVjFhelIrZU1yTmgrbXp1NEVSdVZhRHdZSlJKUGRPVTIvalpSU3ZXMzMzYkxqcXppVHhWZGNoemJUWDBIRTZSbEtGSjlkODcxUTFWKzM1Y05iSmwzOE8zbHRhZ1g1Z254MEtPMmw2d2tXYUtpMDhRMGp1ZWlycTFHQXBacnJ0QlFUZjBGYUtlNFlaZ1pydWVWbmI5WThDb1psbmNnZ0hZM0VqLzcwUVJXUHc1ZWJtUTFuUUdTazlKR25VYnNWT21EK1ZEVUpBa1dGZEllaDR6NVlXaUVyZXhvY2R0UlZUMlRJUTR3cktmcndURXoxcmVtakRxUVhiVTkzSFJJbzFHTU1vd2FKV1ByUGRSMEk2bkFna3VDZXRJbUxiQ2lYbzNQSkl2Q3F3TWVXRUQ2QlJIWlRhUEYwTnVtdlljb3BEY0Rwano5ai9Za1ZpUFU4MkZqeHpBNDBJckxHWW5VMzg4eFRkbVM0eXZxOEhuL0lMTS9WWVluRGwvdEhhWldvSlBUL0dqaEZPbkFDU0NoUDVkZFh5ZnppOFkwaldQcDR0Q3dGSDcxNEdnR1lqYkVxaFNibjNNYnBvOVE3S25QRXdJRG5WKzhhSVkzVlduNk0yczNIQ011SXI5RmNMVzlRdU5rdVZadjZReEgvNE9IQ2N0QUI4dTJGMTQ5V0dTVUlNZTdUSENGcFQ3Q1ZlbTJUUlNnbVg0ODhneVhieGFORTg4WXpnL3VKVEdGWkdlRjFVUXMzR3pBMVorWGpVRjRJbExYTXFHL2E4dGNFcTlKM0pZNy9mRmJaSzQ1RWU1OTI0QmxSWGd5N1ZjNTRFMmF0dlk3TEx0eG16R21Hb1I2S21WcDJaRWEweS9rZzl3aWJTWXJYcnlaNzFrcWZWZDkxd3JwYzZaWmV6SWJrSHFkam55UDRhcFRRNFVLd01tcFVZWmdQS1FyaytYcmY3Q3dPY1lwWkpUNEhYL21sUmVDeWlJdDZObHM0MXVnVXptbHozRDYybjl3RE05dG9RK0ZsWUdvclcwVHBBaVZnNUg1cmM3Z2FmZUg2RkppNDlIc3pBV1pIRmNxWHZESlRsN0hiQjFRcW11aVo4M0F2aW1PZXJZVGEzL2k3SjZ4bHdLYS82VlBjdFVId1FFcGVOUHlEL3FYbExyUUtYQndla0JCQ1MxTHBwRnQ3Q0xMd3VaQ0RsN29PVmlGbnYvcmV4OE4wOFF6K2xaR3k5ZlViL1hMU1BEN3grWTBOSkZDcmhNNjhWWDN3Q29CQzgyVDVqUDZQdFpXMENiRzVIOUFtUnBhOXBBVTA0L3BwMU5WUWE0K2wxMUh6ZE02VUxBcExpRmtmQkg0ZVZuOEhocmFJaUptTUx2YkhhVUF2RDRIMURuSjZJQVFHMkl3cTJzeWpnc2pXdlVWL0o1OWZTdGxESmRZZHhna1Z1NjR3WVR0ZSt4Vm1KRDN0NnMreXVSeE9LajdML2VxVzZiN25zN241L1E4cGd4QWhrZXNmcjF3T2ZEMWtRTnFpRlFsTHBGODYrK0FvRmpvY2h1N2lpUGk0ZjJaL3BhTUJIUldhY0phc2wrWFhpWEtKdFE5TVlCOXN1OUIzUFVYb1Fyayt0c2ZYbnNkNkVQZ29hVENaV1RaQWVwWTdPQitTa212VnV1T2t5UGRaNndBRlcweFdWMGxGQWNzNWcyNS94VVZVVC9nNVV3ZXJ2N0FWQ1gzaXduNDdQVWxPbUliWG5rVlBRTUNuQ0xGMFBhMmJieFVNamRHN3hEemFIUFYyQmFhb2JkQTNXTmhBQkhNZi9JTHFEQVI0YzY4dXdvSXBYT1lmTCt3RzRsMy9tVENNRzNWdUU2YkhjdnNHc3dKVWZ2aUpLblZvZ0FWUVEvZWhyV2cwNDYwVCtjMVluVGxJb3pmZ3J3M3JLV3ZISm1jdHZVWmtmbkU4VlAxVnR1MjZiL0RmdUxQeDNGUWkxUWpXeHNPeHpxaHBvcUtlQlU2a00yZjdIUWJYOGk0UiszVWgreHVnKzIxaWNoaitHY1UxQkJpdWlSUE9DTE5VdHhzd0dRRmtmS3ArRGZhY2ExMURxTjV6bXdwQTV6ZlowR2NLeDk4VnBsZVh3NE1VQTdCMVkxV0x0RTFtTWpXb21tNUh0Zi9VeE1mYkdtWnBNdFJPRHJxOEVaaHN5YnF5Q2dPcGlVZEZiY3VZMkRUbnVQZ3JNVGViK1VMSFhDbkxXcnN5bjl5eTRIcnhSM2pVdUFBNFQ3bjNvaVJWcGxLazI0cTFjK1Z3Yy9obkIrbGlMVUNPUnZTREJIUkRBS3U0Q0VXSDExUEttM3FrZ29ETGhITXdqWkhyS2MrakRiWHlXWTVMMnlLVGxubFdVc1pBdVVlVGRWb3JOQ05ZNWlISWdTU0FBdGNtbm1uMzArbDhPK3FOQnhMWGU3aWRwYyttK0RvVGwrSHNsVUdjc3VUMnhBajJkWmZDTzRKMXNRRU5LdEtYbWZEa01MWWtmYzVnR1VBRjlKR0MyUEJTVDJMdy9NVUtNNDJSNXk3dUpJMFRFYVR6dTVkM2RhN1lQY1B0aVh1Sk1rTUNNM1k3ZW4yQVFtTjJMSzI1bzVMUHlFa1FrUzdTTlpXUWhkNU1wTy9uS1JzUVFabWNJdGpuQkExVmdtc1RlVG1QVExMN2R3Y2RPMW1tV08yMU94QWxZVU9CRk9FMkluTFRyb2xIcjZob2F3SzlwdHFWam9sWThQZ3Z2WTQxa2JaWkx3V2xVK0R2UzdmdU9JYzhqcGNTU0VleVdkeVRpVHRVSWt2MkhxZTdXMEYvdXR2T0ZjS01xbGFCQ1phUjBVM1A2aUF0WG1OM3h0UkZrY3MrUzdaczUvSUUzditBYi9kQ3ZQTnhIeUFNYXAzajdKM3ArMnFFa0JnZFJJQlhJQXVlcGNpNXlGcG42RGZUWWkzRERQRGQrVjE3bEhvL2NTdkFTdGo2WWc2NFlZUXl2Um1Ocnk1RHZmTHo4ZjRFclBMYi9SeTBVcW9laFdENnZBRDV1L3ZBaDVhTWYzMEoveGlCK3BCMmZGTEgwUHQzS3h0YTVvV0ZBY3VRRFIzeStUdFhoTlRJMGRsVVNXOUVFZGRGZU1HMG9KYkpVc1g0c0ZzS0RlUVlYeHp5d2tieHFNYW9pZjhUWUNqRU4vQkJEeU5lYTNObnVDOWdRUTNiUGRjbUJKSzIyV3hGcjlFRXpmcW9GejFDOWJraCtYV01lOWFEN0REbU5uWFlTdU4yUFlDSWs2RWRpcDBXU3ZVSWFhem1DQ3NrbThYTFFjUlpVSDB4b0YweW5SM2RwdGhlMDZUc2FkZExkdG93dFhibTlnSDQ3TTRWMDN0QXRmd1ZpSnc4S1VPc2x6MDNBd1lNaU1kbGVtM0dhRGxRTlFmdUVINFJGa3kzVnE2Y3haWS9uQWdwL3FianNIRmxmTExNWjdtSW0vTkpJd1NHMXdhRUg5S3g0UjNtU1kxTENKL1pYVkhoWWt0ZVhiSUxZSHhNVzN3cXRjOHZacjg1RFFrQ0ppbmwwSVJ4V0Y3cFBLWStNY0tqYXUxaEcya291RjN4bHV1S05HTXZpT2J2S3FEc2NMOU1tdDA2OXhuRms3dUlOK1RWVEVjQUFrelRRdTlMMGdVcUcvZ2FiRHVZN3cvU0RJam02TUYrRmgyRExxYVNkSVR0TXMzaEJIRE9peW96RmRUMUVCR0IvejA4bURULzBJU0ppSlZka0t1WGR5M3EyNVlxMkhINE5IT20rQVR0U3h3R1dkRm9EY1h4R0xySDJLclUzcGNXdFRBYnpneUdtczVMdTJqQ2g0b1d6QjVQck13bkdYNnkwQW1BUTVBYm1NWkxpNzZhTE5ueXN0aEVBOVRGUzcrYlY0bzJQQnVzSEJkd0h3b1NLVEVYY1dMYm5oRVBjSWsyM0YweFFBZlZGSTIvbkpZSXQzSGpReVBoc0pCWmdObWlXT0VhVFNhTkt6R0xaOTJNREJWOUVPU2RyRXRhNVJPZVZaaUU4VjZTMUg0UzlxeXhCL05rVFJsalJKV0xEYmVVbXkyMktIN3V2K1Vta0lyTldjeEJRdmpoQm9HVFBLMnk1MDZleG0vTFhHSE4xOWNOelRnK0NBRFkxOU83N3dYTHVvNDRCUG5OVWd6L2djT0t5bUxyS0szOHRGRFNQem5JRnBUSk5kZytPeFhucDlHV3RyQm1pZ21FcWFLRTBWeDA2blQyNDVJMTNZMDRLS3hkWUhmcEtJeHVIQXJVRktzVVIyc0toMDdKbE9GOVFTa290bmFGTFRJYmhIamZsaG1jTVpaUmpTMDg1bU5ZQkZjOGU4amh3WWp5MUN5RFdwaDlNTjFRdlk3eWxSRzhwMFJraE5qNXVyTm1CWDFEZkRMTjVxdUlZZVA0cVpHRUFPUVdmT05EM2VEc3BsVU9MZzRvSllSeG45Wjh4VmVNVEdpZ1R6V2NpSk5jcnhRVGh4alhMN0lhL1NxM2lyakQ2aUlkTmZlS2puSXg3MTZEYW1qcjdjVGZCUEVnNDMwb010YTJhUXZJS2VXK2k0K3NrMUZDck9iVWpLZWZmc2R4Qk90VllvbjhlVmFaVm8wT28rdkc4VFUzTXdOY1BUK2ZiUEtadWlrVXZkN0taMGoyKzFjTlduVUpZcmlsUFdJcGMwd2lRYjNScFhYSi9HVUhxNFgxMUpVQXVNenhXUGcyckZwR1lPWCthSkRDeGdSTDV2aENWTldjU1h0ZlZHUlRydStPd2NWQTlDQjJRdnNFRmMxSTVCbHBpNTE1UnZuSmJaRGZ6c2gwY1dRT045M3B1cHJnMlpnYW0vaUd6WU8zRW5DUEFVSm00LzVLTk92Z0VTRlE4M2sySWJ3dUREYldnUE8wZUl5TG5pOUE2bzhDblFiYVdlS212NnlYOVowdzhZOElqUXI2U0ZKMms3MVZ1NUxjaWlQN3hZdHhjYWVTTnR0Wmlid1BNWFNUTEpvczhveGlaS2tuUVJnNFlsOXBEd0NKM0pqZ3Bqblo1UlZ5Y1l2aitPQ3gyM2t3TVlsS1Vqdm9UaGNLK0R4RTdGaDlKVmZDWXlXbnIrdTkrN0dNQStrY2ZHZVZ0OW1DVHp0akZ3U3BSYkgzcU5ZSEYvSlpnb1dEQkxaUnFCVy9OWEphc1FxNDdSR2I2UVRXT2NIL25rbTNWaTJEc0NUNUY5QngxWk5ySDFFTVIzWi8rY3hZRUFYWC93Z0xSODNRbFhQRVRTVU5XNTI1eFE3NnhIZEVxK09QTDlhL3NLR0k1elI0TlVtSmpjMkFyK3hJQ2F5Z2JqMjR6dWdJQ2VLRGhqSEI5dmxmajBxMzFJLzVwT3pNYXRJMjBrVk53UVVYZ0dORXY3a2pNYXNQSHF2L0dSVlFqWld0b0pXYnVWVkl4SzRjcUtGZ211NEZUVjlOTkdvM29ueTl4Q2ZQYm5tVkRudy9hS2VoQVRWdWE1NjBXazE0VnhWRDV4ZDI5bE53NlZjZFFGTC9abGRxOE9aWWs9In0=';
+var LS='drsim_v1', LSPW='drsim_pw';
+var D=null, S=null, FX={USD:0,EUR:0,CNY:0,ts:0,ok:false};
+var UFS=['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+var UF_REF={AC:[19,0],AL:[19,1],AP:[18,0],AM:[20,0],BA:[20.5,0],CE:[20,0],DF:[20,0],ES:[17,0],GO:[19,0],MA:[23,0],MT:[17,0],MS:[17,0],MG:[18,0],PA:[19,0],PB:[20,0],PR:[19.5,0],PE:[20.5,0],PI:[22.5,0],RJ:[20,2],RN:[20,0],RS:[17,0],RO:[19.5,0],RR:[20,0],SC:[17,0],SP:[18,0],SE:[19,1],TO:[20,0]};
+var SUL_SE=['SP','RJ','MG','PR','SC','RS'];
+var VIEWS=[['sim','SIMULADOR'],['comp','COMPOSIÇÃO DE CUSTO'],['prop','PROPOSTA'],['tab','TABELA DE PREÇOS'],['prem','PREMISSAS'],['mem','MEMORIAL']];
+
+/* ---------- utilidades ---------- */
+function $(id){return document.getElementById(id)}
+function num(v){v=parseFloat(String(v).replace(',','.'));return isFinite(v)?v:0}
+function brl(v){return (isFinite(v)?v:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function brl0(v){return (isFinite(v)?v:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0})}
+function pct(v,d){return isFinite(v)?(v*100).toLocaleString('pt-BR',{minimumFractionDigits:d==null?1:d,maximumFractionDigits:d==null?1:d})+'%':'—'}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function uid(){return Math.random().toString(36).slice(2,9)}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+function keyOf(fam,mod,par){return fam+'|'+mod+'|'+par}
+function today(){return new Date().toISOString().slice(0,10)}
+function daysSince(iso){if(!iso)return 1e9;return (Date.now()-new Date(iso).getTime())/864e5}
+
+/* ---------- criptografia (dados de custo) ---------- */
+function b64(s){var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+async function decrypt(pw){
+  var p=JSON.parse(atob(PAYLOAD)), enc=new TextEncoder();
+  var km=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);
+  var k=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(p.s),iterations:p.i,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+  var out=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(p.v)},k,b64(p.c));
+  return JSON.parse(new TextDecoder().decode(out));
+}
+
+/* ---------- estado ---------- */
+function defaults(){
+  var uf={};UFS.forEach(function(u){uf[u]={a:UF_REF[u][0]/100,f:UF_REF[u][1]/100,fonte:'Tabela geral 2026 (Focus NFe)',data:'2026-11-17',st:'ref'}});
+  var m={};D.margens.forEach(function(r){m[r[0]]={min:r[1],alvo:r[2],ab:r[3]}});
+  return {
+    v:1, margens:m, uf:uf,
+    fis:{origem:'SP',icmsRef:D.fiscal.icms,ipi:D.fiscal.ipi,pis:D.fiscal.pis,cofins:D.fiscal.cofins,com:D.fiscal.com,excl:1},
+    res:{fixas:0,ir:0.34,fxMode:'auto',usd:5.40,eur:6.25,cny:0.75,colchao:0.02},
+    imp:{frete:0.08,seg:0.005,ii:0.14,pis:0.021,cof:0.0965,icms:0.01,desp:0.05,credPC:1,credIPI:1,credICMS:0},
+    nac:{frete:0.02,icms:0.12,pis:0.0165,cof:0.076},
+    custos:{}, comps:{}, prop:{itens:[],cli:'',num:'',val:15,cond:'',obs:''},
+    sim:{fam:D.custos[0][0],mod:D.custos[0][1],par:D.custos[0][2],qtd:1,cont:0,src:'tab',cli:'',uf:'SP',perf:'nc',fin:'uso',inter:'auto',dif:'dupla',red:0,frete:0,inst:0,gar:0,out:0,cred:0,vari:0,extok:false,ent:100,np:0,p1:30,pi:30,tx:1.2,pn:null,manual:{}},
+    view:'sim'
+  };
+}
+function merge(a,b){for(var k in a){if(b[k]===undefined)b[k]=a[k];else if(a[k]&&typeof a[k]==='object'&&!Array.isArray(a[k])&&b[k]&&typeof b[k]==='object')merge(a[k],b[k])}return b}
+
+/* ---------- dados de equipamentos ---------- */
+function fams(){var o=[];D.custos.forEach(function(r){if(o.indexOf(r[0])<0)o.push(r[0])});return o}
+function mods(f){var o=[];D.custos.forEach(function(r){if(r[0]===f&&o.indexOf(r[1])<0)o.push(r[1])});return o}
+function pars(f,m){return D.custos.filter(function(r){return r[0]===f&&r[1]===m}).map(function(r){return r[2]})}
+function tabCost(k){if(S.custos[k]!=null)return S.custos[k];var r=D.custos.find(function(r){return keyOf(r[0],r[1],r[2])===k});return r?r[3]:0}
+function origCost(k){var r=D.custos.find(function(r){return keyOf(r[0],r[1],r[2])===k});return r?r[3]:0}
+
+/* ---------- câmbio ---------- */
+function fx(m){
+  if(m==='BRL')return 1;
+  var man=S.res.fxMode==='man'||!FX.ok, v=man?S.res[m.toLowerCase()]:FX[m];
+  return v*(1+S.res.colchao);
+}
+function fxRaw(m){return (S.res.fxMode==='man'||!FX.ok)?S.res[m.toLowerCase()]:FX[m]}
+async function loadFX(){
+  try{
+    var r=await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,CNY-BRL',{cache:'no-store'});
+    var j=await r.json();
+    FX.USD=+j.USDBRL.ask;FX.EUR=+j.EURBRL.ask;FX.CNY=+j.CNYBRL.ask;FX.ts=Date.now();FX.ok=FX.USD>0;
+  }catch(e){FX.ok=false}
+  renderFX();if(S.view==='comp')renderComp();renderSim();
+}
+function renderFX(){
+  var man=S.res.fxMode==='man'||!FX.ok;
+  var t=FX.ts?new Date(FX.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+  $('fxbar').innerHTML=['USD','EUR','CNY'].map(function(m){return '<span class="chip'+(man?' man':'')+'">'+m+'<b>'+fxRaw(m).toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:4})+'</b></span>'}).join('')+'<span class="chip">'+(man?'câmbio manual':'ao vivo '+t)+'</span>';
+}
+
+/* ---------- composição: custo de um item ---------- */
+function itemCalc(it){
+  var q=num(it.q)||0, o={des:0,cred:0,liq:0,va:0,ii:0,ipi:0,pc:0,icms:0,desp:0,brl:0};
+  if(it.o==='I'){
+    var I=S.imp, fob=num(it.p)*fx(it.m||'USD');
+    o.brl=fob;
+    var va=fob*(1+I.frete+I.seg), ii=va*num(it.ii), ipi=(va+ii)*num(it.ipi), pc=va*(I.pis+I.cof);
+    var desp=va*I.desp, icms=I.icms>0?(va+ii+ipi+pc+desp)*I.icms/(1-I.icms):0;
+    o.va=va;o.ii=ii;o.ipi=ipi;o.pc=pc;o.icms=icms;o.desp=desp;
+    o.des=va+ii+ipi+pc+icms+desp;
+    if(it.cr){o.cred=(I.credPC?pc:0)+(I.credIPI?ipi:0)+(I.credICMS?icms:0)}
+  }else{
+    var N=S.nac, p=num(it.p), ipiN=p*num(it.ipi), fr=p*N.frete, icmsN=p*num(it.icms);
+    o.brl=p;o.ipi=ipiN;o.icms=icmsN;
+    o.des=p+ipiN+fr;
+    if(it.cr){o.pc=(p-icmsN)*(N.pis+N.cof);o.cred=icmsN+ipiN+o.pc}
+  }
+  o.liq=o.des-o.cred;
+  ['des','cred','liq','va'].forEach(function(k){o[k+'T']=o[k]*q});
+  return o;
+}
+function compCalc(k){
+  var c=S.comps[k];if(!c)return null;
+  var r={nac:0,imp:0,va:0,dem:num(c.dem),tot:0,n:c.itens.length,fxs:0};
+  c.itens.forEach(function(it){var o=itemCalc(it);if(it.o==='I'){r.imp+=o.liqT;r.va+=o.vaT;r.fxs+=(o.liqT-0)}else r.nac+=o.liqT});
+  r.tot=r.nac+r.imp+r.dem;
+  /* sensibilidade: +1% no câmbio ≈ +1% no custo dos importados (tributos ad valorem) */
+  r.fx1=r.imp*0.01;
+  return r;
+}
+
+/* ---------- motor de preço ---------- */
+function interAuto(uf){
+  var o=S.fis.origem;
+  if(uf===o)return null;
+  if(SUL_SE.indexOf(o)>=0&&o!=='ES'&&SUL_SE.indexOf(uf)<0)return 0.07;
+  return 0.12;
+}
+function ctx(sim){
+  sim=sim||S.sim;
+  var k=keyOf(sim.fam,sim.mod,sim.par), cc=compCalc(k), useComp=sim.src==='comp'&&cc&&cc.n>0;
+  var custo=useComp?cc.tot:tabCost(k);
+  var F=S.fis, uf=sim.uf, interna=uf===F.origem, U=S.uf[uf]||{a:0,f:0,st:'ref'};
+  var inter=interna?null:(sim.inter==='auto'?interAuto(uf):num(sim.inter));
+  var red=num(sim.red)/100;
+  var aIcms=interna?(S.uf[F.origem]?S.uf[F.origem].a:0.18):inter, icmsE=aIcms*(1-red);
+  var aInt=U.a, fcp=U.f, kD=0,kF=0,kDc=0,kFc=0;
+  if(!interna&&aInt>0){
+    var dup=sim.dif==='dupla', bf=dup?(1-icmsE)/(1-(aInt+fcp)):1;
+    var dRate=dup?Math.max(0,bf*aInt-icmsE):Math.max(0,aInt-icmsE), fRate=bf*fcp;
+    if(sim.perf==='nc'){kD=dRate;kF=fRate}
+    else if(sim.fin==='uso'){kDc=dRate;kFc=fRate}
+  }
+  var pc=(F.pis+F.cofins)*(1-icmsE*F.excl);
+  /* prazo médio e custo financeiro */
+  var ent=Math.min(100,Math.max(0,num(sim.ent)))/100, np=Math.max(0,Math.round(num(sim.np))), p1=num(sim.p1), pi=num(sim.pi), i=num(sim.tx)/100;
+  var pm=0,pv=ent; if(np>0){for(var j=0;j<np;j++){var d=p1+j*pi;pm+=(1-ent)/np*d;pv+=(1-ent)/np/Math.pow(1+i,d/30)}} else pv=1;
+  var fin=1-pv;
+  var vari=num(sim.vari)/100, com=F.com;
+  var t=icmsE+kD+kF+pc+com+vari+fin;
+  var extras=num(sim.frete)+num(sim.inst)+num(sim.gar)+num(sim.out)-num(sim.cred);
+  var base=custo*(1+num(sim.cont)/100)+extras;
+  var m=S.margens[sim.fam]||{min:.2,alvo:.25,ab:.3};
+  var ci=cc&&useComp&&cc.va?cc.va:0;
+  return {k:k,cc:cc,useComp:useComp,custo:custo,base:base,extras:extras,interna:interna,inter:inter,aIcms:aIcms,icmsE:icmsE,aInt:aInt,fcp:fcp,kD:kD,kF:kF,kDc:kDc,kFc:kFc,pc:pc,com:com,vari:vari,fin:fin,pm:pm,t:t,m:m,U:U,ufStatus:U.st,va:ci,
+    price:function(mg){var d=1-t-mg;return d>0?base/d:NaN},
+    marg:function(p){return p>0?(p*(1-t)-base)/p:NaN}};
+}
+function breakdown(c,p){
+  var x={p:p,custo:c.custo*(1+num(S.sim.cont)/100),extras:c.extras,icms:p*c.icmsE,difal:p*c.kD,fcp:p*c.kF,pc:p*c.pc,com:p*c.com,vari:p*c.vari,fin:p*c.fin};
+  x.contrib=p-x.custo-x.extras-x.icms-x.difal-x.fcp-x.pc-x.com-x.vari-x.fin;
+  x.mc=p>0?x.contrib/p:0;
+  x.fixas=p*S.res.fixas; x.lair=x.contrib-x.fixas; x.ir=Math.max(0,x.lair)*S.res.ir; x.ll=x.lair-x.ir;
+  x.ipi=p*S.fis.ipi; x.difc=p*(c.kDc+c.kFc);
+  return x;
+}
+
+/* ---------- navegação ---------- */
+function go(v){
+  S.view=v;save();
+  VIEWS.forEach(function(x){$('v-'+x[0]).classList.toggle('on',x[0]===v)});
+  document.querySelectorAll('[data-view]').forEach(function(b){b.classList.toggle('on',b.dataset.view===v)});
+  $('drawer').classList.remove('open');
+  ({sim:renderSim,comp:renderComp,prop:renderProp,tab:renderTab,prem:renderPrem,mem:renderMemo})[v]();
+  window.scrollTo(0,0);
+}
+function buildNav(){
+  var h=VIEWS.map(function(x){return '<button data-view="'+x[0]+'">'+x[1]+'</button>'}).join('');
+  $('tabs').innerHTML=h;$('dlist').innerHTML=h;
+  document.querySelectorAll('[data-view]').forEach(function(b){b.onclick=function(){go(b.dataset.view)}});
+  $('burger').onclick=function(){$('drawer').classList.add('open')};
+  $('drawer').onclick=function(e){if(e.target.id==='drawer')$('drawer').classList.remove('open')};
+}
+
+/* ---------- seletores de equipamento ---------- */
+function fillSel(el,arr,val,lab){el.innerHTML=arr.map(function(v){return '<option value="'+esc(v)+'"'+(String(v)===String(val)?' selected':'')+'>'+esc(lab?lab(v):v)+'</option>'}).join('')}
+function equipSel(pre,o,cb){
+  var f=$(pre+'-fam'),m=$(pre+'-mod'),p=$(pre+'-par');
+  function sync(){
+    fillSel(f,fams(),o.fam);
+    var ms=mods(o.fam);if(ms.indexOf(o.mod)<0)o.mod=ms[0];fillSel(m,ms,o.mod);
+    var ps=pars(o.fam,o.mod);if(ps.indexOf(+o.par)<0)o.par=ps[0];fillSel(p,ps,o.par,function(v){return v+' paradas'});
+  }
+  f.onchange=function(){o.fam=f.value;o.mod=mods(o.fam)[0];sync();cb()};
+  m.onchange=function(){o.mod=m.value;sync();cb()};
+  p.onchange=function(){o.par=+p.value;cb()};
+  sync();
+}
+
+/* =================== SIMULADOR =================== */
+var SIMF=['qtd','cont','cli','uf','perf','fin','inter','dif','red','frete','inst','gar','out','cred','vari','ent','np','p1','pi','tx'];
+function initSim(){
+  fillSel($('s-uf'),UFS,S.sim.uf);
+  equipSel('s',S.sim,function(){S.sim.pn=null;save();renderSim()});
+  SIMF.forEach(function(k){var el=$('s-'+k);el.value=S.sim[k];el.oninput=el.onchange=function(){S.sim[k]=el.type==='number'?num(el.value):el.value;save();renderSim()}});
+  $('s-extok').checked=!!S.sim.extok;$('s-extok').onchange=function(){S.sim.extok=this.checked;save();renderSim()};
+  document.querySelectorAll('#s-src button').forEach(function(b){b.onclick=function(){S.sim.src=b.dataset.v;save();renderSim()}});
+  $('s-pn').oninput=function(){S.sim.pn=num(this.value)||null;$('s-mc').value='';$('s-desc').value='';save();renderSim(true)};
+  $('s-mc').oninput=function(){var c=ctx(),v=c.price(num(this.value)/100);if(isFinite(v)){S.sim.pn=Math.round(v*100)/100;$('s-pn').value=S.sim.pn.toFixed(2);$('s-desc').value='';save();renderSim(true)}};
+  $('s-desc').oninput=function(){var c=ctx(),ab=c.price(c.m.ab);if(isFinite(ab)){S.sim.pn=Math.round(ab*(1-num(this.value)/100)*100)/100;$('s-pn').value=S.sim.pn.toFixed(2);$('s-mc').value='';save();renderSim(true)}};
+  document.querySelectorAll('[data-set]').forEach(function(b){b.onclick=function(){var c=ctx();S.sim.pn=Math.round(c.price(c.m[b.dataset.set])*100)/100;$('s-pn').value=S.sim.pn.toFixed(2);$('s-mc').value='';$('s-desc').value='';save();renderSim(true)}});
+  $('addprop').onclick=addProp;
+  $('gocomp').onclick=function(){S.comp={fam:S.sim.fam,mod:S.sim.mod,par:S.sim.par};go('comp')};
+}
+function renderSim(keepPn){
+  if(!S)return;
+  var c=ctx(), s=S.sim;
+  document.querySelectorAll('#s-src button').forEach(function(b){b.classList.toggle('on',b.dataset.v===(c.useComp?'comp':'tab'))});
+  $('s-srch').textContent=c.cc&&c.cc.n?('Tabela: '+brl(tabCost(c.k))+' • Composição: '+brl(c.cc.tot)+(c.useComp?' (em uso)':'')):(s.src==='comp'?'Sem composição cadastrada p/ este equipamento — usando a tabela.':'Custo de tabela: '+brl(tabCost(c.k))+(S.custos[c.k]!=null?' ✎ editado':''));
+  $('s-interh').textContent=c.interna?'Operação interna — ICMS '+pct(c.aIcms)+' (UF origem '+S.fis.origem+')':'Aplicado: '+pct(c.inter,0)+(s.inter==='auto'?' (regra origem '+S.fis.origem+')':'');
+  $('s-pm').value=Math.round(c.pm)+' dias • '+pct(c.fin,2);
+  var pmin=c.price(c.m.min), palvo=c.price(c.m.alvo), pab=c.price(c.m.ab), q=Math.max(1,num(s.qtd));
+  var ipi=S.fis.ipi;
+  function card(cls,k,p,mg,col){return '<div class="pc '+cls+'" style="--c:'+col+'" data-p="'+p+'"><div class="k">'+k+' • '+pct(mg,0)+'</div><div class="v">'+(isFinite(p)?brl(p):'—')+'</div><div class="s">'+(q>1?q+' un.: '+brl0(p*q*(1+ipi))+' • ':'')+'sem IPI'+(ipi?' • c/ IPI '+brl0(p*(1+ipi)):'')+'</div></div>'}
+  $('prices').innerHTML=card('','PREÇO MÍNIMO',pmin,c.m.min,'#d98a00')+card('alvo','PREÇO ALVO',palvo,c.m.alvo,'#3d9bff')+card('','PREÇO ABERTURA',pab,c.m.ab,'#14a36b');
+  document.querySelectorAll('.pc').forEach(function(el){el.onclick=function(){S.sim.pn=Math.round(+el.dataset.p*100)/100;$('s-pn').value=S.sim.pn.toFixed(2);save();renderSim(true)}});
+  if(!s.pn||!isFinite(s.pn))s.pn=isFinite(palvo)?Math.round(palvo*100)/100:0;
+  if(document.activeElement!==$('s-pn'))$('s-pn').value=s.pn?(+s.pn).toFixed(2):'';
+  var p=num(s.pn), x=breakdown(c,p), mc=x.mc;
+  var st=!isFinite(mc)||p<=0?['nt','SEM PREÇO']:mc<0?['bad','PREJUÍZO NA CONTRIBUIÇÃO']:mc<c.m.min-1e-6?['bad','ABAIXO DO MÍNIMO']:mc<c.m.alvo-1e-6?['warn','ENTRE MÍNIMO E ALVO']:mc<c.m.ab-1e-6?['ok','META ATINGIDA']:['ok','ACIMA DA ABERTURA'];
+  $('negstatus').innerHTML='<span class="tag '+st[0]+'">'+st[1]+'</span> <span style="color:var(--muted);font-size:12px;margin-left:6px">Desconto máx. até o mínimo: <b>'+pct(1-pmin/pab)+'</b> sobre a abertura</span>';
+  $('negr').textContent=q>1?(q+' un. • total s/ IPI '+brl0(p*q)):'';
+  $('kpis').innerHTML=[['Margem contribuição',pct(mc)],['Contribuição / un.',brl0(x.contrib)],['Markup s/ custo',isFinite(p/x.custo)?(p/(x.custo+x.extras)).toFixed(3).replace('.',',')+'x':'—'],['Lucro líquido est.',brl0(x.ll)],['Total c/ IPI ('+q+' un.)',brl0(p*q*(1+ipi))],[x.difc>0?'DIFAL do comprador':'Desconto s/ abertura',x.difc>0?brl0(x.difc):pct(1-p/pab)]].map(function(k){return '<div class="kpi"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>'}).join('');
+  /* régua de negociação */
+  var lo=pmin*0.9, hi=pab*1.06, pos=function(v){return Math.max(0,Math.min(100,(v-lo)/(hi-lo)*100))};
+  $('range').innerHTML='<div class="tr"></div>'+[[pmin,'mín'],[palvo,'alvo'],[pab,'abertura']].map(function(a){return '<div class="mk" style="left:'+pos(a[0])+'%"><i>'+a[1]+'</i></div>'}).join('')+'<div class="me" style="left:'+pos(p)+'%"></div>';
+  /* formação do preço */
+  var parts=[['Custo do equipamento',x.custo,'#08215A'],['Custos da venda',x.extras,'#4a6fb5'],['ICMS próprio',x.icms,'#d6374a'],['DIFAL (vendedor)',x.difal,'#ef6b7b'],['FCP (vendedor)',x.fcp,'#f4a3ad'],['PIS/COFINS',x.pc,'#e07b16'],['Comissão',x.com,'#f0b43a'],['Desp. variáveis',x.vari,'#b9a06b'],['Custo financeiro',x.fin,'#8d6ccf'],['Contribuição',x.contrib,'#14a36b']];
+  $('stack').innerHTML=parts.filter(function(a){return a[1]>0}).map(function(a){return '<div title="'+a[0]+': '+brl(a[1])+'" style="width:'+(a[1]/p*100)+'%;background:'+a[2]+'"></div>'}).join('');
+  $('legend').innerHTML=parts.filter(function(a){return Math.abs(a[1])>0.005}).map(function(a){return '<span><i style="background:'+a[2]+'"></i>'+a[0]+' '+pct(a[1]/p)+'</span>'}).join('');
+  var rows=[['Preço da mercadoria (sem IPI)',p,1,'hl'],['(−) Custo do equipamento'+(c.useComp?' — composição':' — tabela')+(num(s.cont)?' + contingência':''),-x.custo],['(−) Frete, instalação, garantia e outros (líq. créditos)',-x.extras],['(−) ICMS próprio '+pct(c.icmsE,2),-x.icms],['(−) DIFAL vendedor '+pct(c.kD,2),-x.difal],['(−) FCP vendedor '+pct(c.kF,2),-x.fcp],['(−) PIS/COFINS '+pct(c.pc,2)+(S.fis.excl?' (ICMS fora da base)':''),-x.pc],['(−) Comissão '+pct(c.com,1),-x.com],['(−) Despesas variáveis '+pct(c.vari,1),-x.vari],['(−) Custo financeiro '+pct(c.fin,2)+' ('+Math.round(c.pm)+' dias)',-x.fin],['= Margem de contribuição',x.contrib,1,'tot'],['(−) Despesas fixas rateadas '+pct(S.res.fixas,1),-x.fixas],['(−) IRPJ/CSLL '+pct(S.res.ir,0),-x.ir],['= Lucro líquido estimado',x.ll,1,'tot']];
+  $('dre').innerHTML='<tr><th>Demonstrativo por equipamento</th><th class="n">R$</th><th class="n">% preço</th><th class="n">'+q+' un.</th></tr>'+rows.filter(function(r){return r[2]||Math.abs(r[1])>0.004}).map(function(r){return '<tr class="'+(r[3]||'')+'"><td>'+r[0]+'</td><td class="n">'+brl(r[1])+'</td><td class="n">'+pct(r[1]/p)+'</td><td class="n">'+brl0(r[1]*q)+'</td></tr>'}).join('')+(x.ipi?'<tr><td>IPI destacado (por fora)</td><td class="n">'+brl(x.ipi)+'</td><td></td><td class="n">'+brl0(x.ipi*q)+'</td></tr>':'')+(x.difc>0?'<tr><td>DIFAL + FCP a cargo do comprador (informativo)</td><td class="n">'+brl(x.difc)+'</td><td class="n">'+pct(x.difc/p)+'</td><td class="n">'+brl0(x.difc*q)+'</td></tr>':'');
+  renderChecks(c,x,p,palvo);
+}
+function renderChecks(c,x,p,palvo){
+  var s=S.sim, man=s.manual||(s.manual={}), A=[], CK=[];
+  function auto(ok,label,w,warn){CK.push({ok:ok,label:label,w:w,warn:warn})}
+  var hasImp=c.useComp&&c.cc&&c.cc.imp>0;
+  auto(c.interna?S.uf[S.fis.origem].st==='val':c.ufStatus==='val','Alíquota interna da UF '+(c.interna?S.fis.origem:s.uf)+' validada com o fiscal',20,true);
+  auto(c.useComp,'Custo por composição (nacional × importado) e não só tabela',15,true);
+  if(c.useComp){var cd=S.comps[c.k];auto(daysSince(cd.rev)<=30,'Composição revisada nos últimos 30 dias'+(cd.rev?' ('+cd.rev.split('-').reverse().join('/')+')':''),10,true)}
+  if(hasImp)auto(FX.ok&&S.res.fxMode!=='man','Câmbio ao vivo aplicado aos importados (+'+pct(S.res.colchao,1)+' de colchão)',10,true);
+  auto(s.extok||c.extras!==0,'Frete, instalação e garantia informados (ou confirmados no custo)',10,true);
+  auto(x.mc>=c.m.min-1e-6,'Margem negociada ≥ mínima da política ('+pct(c.m.min,0)+')',15,false);
+  [['ncm','NCM, IPI e benefícios (redução de BC/ST) confirmados'],['cli','Perfil do cliente e finalidade confirmados (contribuinte/uso)'],['pag','Condição de pagamento combinada com o cliente']].forEach(function(m){CK.push({ok:!!man[m[0]],label:m[1],w:m[0]==='ncm'?10:5,manual:m[0]})});
+  var tw=0,ok=0;CK.forEach(function(k){tw+=k.w;if(k.ok)ok+=k.w});var sc=Math.round(ok/tw*100);
+  $('chk').innerHTML=CK.map(function(k){return k.manual?'<label><input type="checkbox" data-man="'+k.manual+'"'+(k.ok?' checked':'')+'> '+k.label+'</label>':'<div class="it"><span class="ic '+(k.ok?'ok':(k.warn?'warn':'bad'))+'">'+(k.ok?'✓':'!')+'</span>'+k.label+'</div>'}).join('');
+  document.querySelectorAll('[data-man]').forEach(function(el){el.onchange=function(){man[el.dataset.man]=el.checked;save();renderSim(true)}});
+  var r=$('ring');r.style.setProperty('--p',sc);r.style.setProperty('--rc',sc>=85?'#14a36b':sc>=60?'#d98a00':'#d6374a');$('ringv').textContent=sc+'%';
+  /* validação geral */
+  var bad=null;
+  if(!c.interna&&!(c.aInt>0))bad='PENDENTE: alíquota interna de '+s.uf+' não preenchida (Premissas)';
+  else if(c.t+c.m.ab>=1)bad='REVER ALÍQUOTAS: soma de tributos + margem ≥ 100%';
+  else if(!(c.custo>0))bad='SEM CUSTO para o equipamento';
+  var stc=bad?'bad':sc>=85?'ok':'warn';
+  $('st').className='status '+stc;
+  $('stmsg').textContent=bad||(sc>=85?'PREÇO CONFIÁVEL PARA PROPOSTA':'SIMULAÇÃO OK — COMPLETE OS ITENS DE ASSERTIVIDADE');
+  $('stsub').textContent=s.mod+' • '+s.par+' paradas • '+(c.interna?'venda interna '+S.fis.origem:S.fis.origem+' → '+s.uf+' • '+(s.perf==='nc'?'não contribuinte':'contribuinte')+' • '+(s.fin==='uso'?'uso/consumo':'revenda/industr.'))+' • carga variável '+pct(c.t,1);
+  /* alertas */
+  if(!c.interna&&s.perf==='nc')A.push(['warn','Não contribuinte: DIFAL '+pct(c.kD,2)+' e FCP '+pct(c.kF,2)+' ficam com a Delta Rio e já estão no preço. Recolher via GNRE na saída.']);
+  if(!c.interna&&s.perf==='c'&&s.fin==='uso')A.push(['info','Contribuinte p/ uso/ativo: DIFAL ('+brl(x.difc)+') é recolhido pelo comprador — informe na proposta.']);
+  if(c.interna&&s.perf==='c'&&s.fin==='rev')A.push(['info','Revenda em SP: verificar se há ICMS-ST para o NCM do equipamento.']);
+  if(c.useComp&&c.cc){var ci=c.cc.va/p;if(!c.interna&&ci>0.4&&c.inter!==0.04)A.push(['bad','Conteúdo de importação estimado '+pct(ci,0)+' (> 40%): a alíquota interestadual pode ser 4% (Res. Senado 13/2012) — confirme com o fiscal.']);else if(c.cc.va>0)A.push(['info','Conteúdo de importação estimado: '+pct(ci,1)+' do preço (valor aduaneiro dos itens importados).'])}
+  if(c.useComp&&c.cc&&Math.abs(c.cc.tot-tabCost(c.k))/tabCost(c.k)>0.03)A.push(['warn','Composição difere '+pct(c.cc.tot/tabCost(c.k)-1,1)+' da tabela de custos ('+brl(c.cc.tot-tabCost(c.k))+'). Avalie atualizar a tabela.']);
+  if(hasImp)A.push(['info','Cada +1% no câmbio aumenta o custo em ≈ '+brl(c.cc.fx1)+' e pede ≈ '+brl(c.cc.fx1/(1-c.t-c.m.alvo))+' a mais no preço alvo.']);
+  if(x.mc<c.m.min&&x.mc>=0)A.push(['bad','Abaixo do mínimo: faltam '+brl(c.price(c.m.min)-p)+' por equipamento para a margem mínima.']);
+  if(x.mc<0)A.push(['bad','Preço não cobre custo + tributos: prejuízo de '+brl(-x.contrib)+' por equipamento.']);
+  if(c.fin>0.02)A.push(['warn','Prazo médio de '+Math.round(c.pm)+' dias custa '+pct(c.fin,2)+' do preço. Mais entrada reduz o preço necessário.']);
+  if(!A.length)A.push(['info','Nenhum alerta para esta operação.']);
+  $('alerts').innerHTML=A.map(function(a){return '<div class="a-'+a[0]+'">'+a[1]+'</div>'}).join('');
+}
+function addProp(){
+  var c=ctx(),s=S.sim,p=num(s.pn),x=breakdown(c,p);
+  S.prop.itens.push({id:uid(),fam:s.fam,mod:s.mod,par:s.par,qtd:Math.max(1,num(s.qtd)),p:p,ipi:S.fis.ipi,mc:x.mc,contrib:x.contrib,custo:x.custo+x.extras,uf:s.uf,src:c.useComp?'C':'T',difc:x.difc});
+  if(!S.prop.cli&&s.cli)S.prop.cli=s.cli;
+  if(!S.prop.cond){var e=num(s.ent),n=Math.round(num(s.np));S.prop.cond=(e?e+'% de entrada':'')+(n?(e?' + ':'')+n+'x a cada '+num(s.pi)+' dias (1ª em '+num(s.p1)+' dias)':'')}
+  save();go('prop');
+}
+
+/* =================== COMPOSIÇÃO =================== */
+var TPL=['Máquina de tração / central hidráulica','Quadro de comando','Portas de pavimento','Porta de cabina / operador','Cabina','Guias (cabina e contrapeso)','Cabos de aço / correias','Limitador e freio de segurança','Armação e contrapeso','Botoeiras e sinalização','Cabos elétricos e chicotes','Ferragens, fixação e suportes'];
+function initComp(){
+  S.comp=S.comp||{fam:S.sim.fam,mod:S.sim.mod,par:S.sim.par};
+  $('c-add').onclick=function(){cur(true).itens.push({id:uid(),d:'',ncm:'',o:'N',q:1,m:'BRL',p:0,ii:S.imp.ii,ipi:0,icms:S.nac.icms,cr:1});touch();renderComp()};
+  $('c-tpl').onclick=function(){var c=cur(true),china=/china/i.test(S.comp.mod),hid=/hidr/i.test(S.comp.mod+S.comp.fam);TPL.forEach(function(d){if(hid&&/tração/.test(d))d='Central hidráulica, pistão e válvula';if(!hid&&/central/.test(d))d='Máquina de tração';var imp=china&&/Portas|Porta de cabina/.test(d);c.itens.push({id:uid(),d:d,ncm:'',o:imp?'I':'N',q:/Portas de pavimento/.test(d)?S.comp.par:1,m:imp?'USD':'BRL',p:0,ii:S.imp.ii,ipi:0,icms:S.nac.icms,cr:1})});touch();renderComp()};
+  $('c-clear').onclick=function(){if(confirm('Apagar a composição deste equipamento?')){delete S.comps[ck()];save();renderComp()}};
+  $('c-use').onclick=function(){S.sim.fam=S.comp.fam;S.sim.mod=S.comp.mod;S.sim.par=S.comp.par;S.sim.src='comp';S.sim.pn=null;save();initSim();go('sim')};
+  $('c-copy').onclick=copyFrom;
+  $('c-rep').onclick=function(){var c=S.comps[ck()];if(!c||!c.itens.length)return alert('Monte a composição primeiro.');var ps=pars(S.comp.fam,S.comp.mod).filter(function(p){return p!==+S.comp.par});if(!confirm('Replicar esta composição para '+ps.join(', ')+' paradas do mesmo modelo?\nQuantidade de portas de pavimento acompanha o nº de paradas; "demais custos" é recalculado pela tabela.'))return;ps.forEach(function(p){var k=keyOf(S.comp.fam,S.comp.mod,p),n=JSON.parse(JSON.stringify(c));n.itens.forEach(function(it){it.id=uid();if(/pavimento/i.test(it.d))it.q=p});S.comps[k]=n;n.dem=0;var r=compCalc(k);n.dem=Math.round((tabCost(k)-r.nac-r.imp)*100)/100;n.rev=today()});save();alert('Replicado para '+ps.length+' equipamento(s).');renderComp()};
+}
+function ck(){return keyOf(S.comp.fam,S.comp.mod,S.comp.par)}
+function cur(create){var k=ck();if(!S.comps[k]&&create)S.comps[k]={itens:[],dem:0,rev:today()};return S.comps[k]}
+function touch(){var c=cur();if(c)c.rev=today();save()}
+function copyFrom(){
+  var keys=Object.keys(S.comps).filter(function(k){return k!==ck()&&S.comps[k].itens.length});
+  if(!keys.length)return alert('Nenhuma outra composição cadastrada ainda.');
+  var t=keys.map(function(k,i){return (i+1)+') '+k.replace(/\|/g,' • ')}).join('\n');
+  var i=parseInt(prompt('Copiar de qual equipamento?\n\n'+t),10)-1;if(!(i>=0&&i<keys.length))return;
+  var n=JSON.parse(JSON.stringify(S.comps[keys[i]]));n.itens.forEach(function(it){it.id=uid();if(/pavimento/i.test(it.d))it.q=+S.comp.par});n.rev=today();S.comps[ck()]=n;
+  var r=compCalc(ck());n.dem=Math.round((tabCost(ck())-r.nac-r.imp)*100)/100;save();renderComp();
+}
+function fld(id,lab,obj,k,mult,step,hint){return {id:id,lab:lab,obj:obj,k:k,mult:mult||1,step:step||'any',hint:hint}}
+function renderFields(el,list,after){
+  $(el).innerHTML=list.map(function(f){var v=f.obj[f.k];return '<div class="f"><label>'+f.lab+'</label>'+(f.sel?'<select id="'+f.id+'">'+f.sel.map(function(o){return '<option value="'+o[0]+'"'+(String(v)===String(o[0])?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>':'<input type="number" id="'+f.id+'" step="'+f.step+'" value="'+(Math.round(v*f.mult*10000)/10000)+'">')+(f.hint?'<span class="hint">'+f.hint+'</span>':'')+'</div>'}).join('');
+  list.forEach(function(f){var e=$(f.id);e.onchange=e.oninput=function(){f.obj[f.k]=f.sel?(isNaN(+e.value)?e.value:+e.value):num(e.value)/f.mult;save();if(after)after()}});
+}
+function renderComp(){
+  if(!S.comp)S.comp={fam:S.sim.fam,mod:S.sim.mod,par:S.sim.par};
+  equipSel('c',S.comp,function(){save();renderComp()});
+  var k=ck(),c=S.comps[k],tc=tabCost(k),r=compCalc(k)||{nac:0,imp:0,dem:0,tot:0,va:0,fx1:0,n:0};
+  var tot=r.tot, sh=tot>0?r.imp/tot:0;
+  $('ckpi').innerHTML=[['Custo de tabela',brl(tc)],['Custo pela composição',r.n?brl(tot):'—'],['Diferença',r.n?brl(tot-tc)+' ('+pct(tot/tc-1,1)+')':'—'],['Compra nacional',brl(r.nac)+'<div class="split"><div style="width:'+(tot?r.nac/tot*100:0)+'%;background:var(--nac)"></div></div>'],['Importado',brl(r.imp)+' • '+pct(sh,0)+'<div class="split"><div style="width:'+(sh*100)+'%;background:var(--imp)"></div></div>'],['+1% câmbio no custo',brl(r.fx1)]].map(function(a){return '<div class="kpi"><div class="k">'+a[0]+'</div><div class="v">'+a[1]+'</div></div>'}).join('');
+  $('crev').textContent=c?('Revisada em '+(c.rev||'').split('-').reverse().join('/')+' • '+c.itens.length+' itens'):'Nenhuma composição cadastrada para este equipamento';
+  var h='<tr><th>Descrição</th><th>NCM</th><th>Origem</th><th class="n">Qtd</th><th>Moeda</th><th class="n">Preço unit.</th><th class="n">II %</th><th class="n">IPI %</th><th class="n">ICMS %</th><th>Créd.</th><th class="n">Líquido unit.</th><th class="n">Total líquido</th><th></th></tr>';
+  (c?c.itens:[]).forEach(function(it){
+    var o=itemCalc(it),I=it.o==='I';
+    h+='<tr class="it" data-id="'+it.id+'"><td><input data-k="d" value="'+esc(it.d)+'" placeholder="Componente" style="min-width:180px"></td><td><input data-k="ncm" class="w90" value="'+esc(it.ncm)+'" placeholder="0000.00.00"></td>'+
+      '<td><select data-k="o" class="w110"><option value="N"'+(I?'':' selected')+'>Nacional</option><option value="I"'+(I?' selected':'')+'>Importado</option></select></td>'+
+      '<td><input data-k="q" type="number" class="w60" step="any" value="'+it.q+'"></td>'+
+      '<td><select data-k="m" class="w80"'+(I?'':' disabled')+'>'+['BRL','USD','EUR','CNY'].filter(function(m){return I?m!=='BRL':m==='BRL'}).map(function(m){return '<option'+(it.m===m?' selected':'')+'>'+m+'</option>'}).join('')+'</select></td>'+
+      '<td><input data-k="p" type="number" class="w110" step="any" value="'+it.p+'" title="'+(I?'Preço FOB unitário na moeda':'Valor unitário da NF s/ IPI (ICMS incluso)')+'"></td>'+
+      '<td><input data-k="ii" data-pct="1" type="number" class="w60" step="any" value="'+(I?r4(it.ii*100):'')+'"'+(I?'':' disabled')+'></td>'+
+      '<td><input data-k="ipi" data-pct="1" type="number" class="w60" step="any" value="'+r4(it.ipi*100)+'"></td>'+
+      '<td><input data-k="icms" data-pct="1" type="number" class="w60" step="any" value="'+(I?'':r4(it.icms*100))+'"'+(I?' disabled title="Definido nos parâmetros de importação"':'')+'></td>'+
+      '<td><input data-k="cr" type="checkbox" style="width:16px;height:16px"'+(it.cr?' checked':'')+'></td>'+
+      '<td class="n">'+brl(o.liq)+'</td><td class="n"><b>'+brl(o.liqT)+'</b></td><td><button class="btn x" data-del="1" title="Remover">✕</button></td></tr>'+
+      '<tr data-id="'+it.id+'"><td class="det" colspan="13"><span class="tag '+it.o+'">'+(I?'IMPORTADO':'NACIONAL')+'</span> '+(I?'FOB '+brl(o.brl)+' (câmbio c/ colchão '+fx(it.m||'USD').toFixed(4).replace('.',',')+') • Valor aduaneiro '+brl(o.va)+' • II '+brl(o.ii)+' • IPI '+brl(o.ipi)+' • PIS/COFINS-imp '+brl(o.pc)+' • ICMS '+brl(o.icms)+' • Desp. aduaneiras/frete interno '+brl(o.desp):'Mercadoria '+brl(o.brl)+' • IPI '+brl(o.ipi)+' • Frete '+brl(o.des-o.brl-o.ipi))+' → desembolso '+brl(o.des)+' − créditos '+brl(o.cred)+' = <b>líquido '+brl(o.liq)+'</b></td></tr>';
+  });
+  var dem=c?num(c.dem):0;
+  h+='<tr class="hl"><td colspan="10"><b>Demais custos não detalhados</b> <span style="color:var(--muted);font-size:12px">(mão de obra, fabricação própria, itens menores — custo líquido)</span> <button class="btn sec sm" id="c-fit">Ajustar pela tabela</button></td><td class="n" colspan="2"><input type="number" id="c-dem" step="any" value="'+r2(dem)+'" style="text-align:right;max-width:150px;float:right"'+(c?'':' disabled')+'></td><td></td></tr>';
+  h+='<tr class="tot"><td colspan="11">Custo líquido total do equipamento</td><td class="n">'+brl(tot)+'</td><td></td></tr>';
+  $('ctab').innerHTML=h;
+  if(dem<0)$('crev').textContent+=' • ⚠ demais custos negativo: itens somam mais que a tabela';
+  $('ctab').querySelectorAll('tr[data-id]').forEach(function(tr){
+    var it=c.itens.find(function(x){return x.id===tr.dataset.id});
+    tr.querySelectorAll('[data-k]').forEach(function(e){e.onchange=function(){var k=e.dataset.k;
+      if(k==='cr')it.cr=e.checked?1:0;else if(e.dataset.pct)it[k]=num(e.value)/100;else if(k==='q'||k==='p')it[k]=num(e.value);else it[k]=e.value;
+      if(k==='o'){it.m=it.o==='I'?'USD':'BRL';if(it.o==='I'&&!it.ii)it.ii=S.imp.ii}
+      touch();renderComp()}});
+    var del=tr.querySelector('[data-del]');if(del)del.onclick=function(){c.itens=c.itens.filter(function(x){return x.id!==it.id});touch();renderComp()};
+  });
+  if($('c-dem'))$('c-dem').onchange=function(){cur(true).dem=num(this.value);touch();renderComp()};
+  if($('c-fit'))$('c-fit').onclick=function(){var cc=cur(true),rr=compCalc(k);cc.dem=Math.round((tc-rr.nac-rr.imp)*100)/100;touch();renderComp()};
+  renderFields('impf',[fld('i1','Frete internacional % FOB',S.imp,'frete',100),fld('i2','Seguro % FOB',S.imp,'seg',100),fld('i3','II padrão p/ novos itens %',S.imp,'ii',100),fld('i4','PIS-importação %',S.imp,'pis',100),fld('i5','COFINS-importação %',S.imp,'cof',100),fld('i6','ICMS importação efetivo %',S.imp,'icms',100,'any','TTD SC ≈ 1%'),fld('i7','Despesas aduaneiras + frete interno % VA',S.imp,'desp',100,'any','despachante, AFRMM, armazenagem, Siscomex'),fld('i8','Colchão cambial %',S.res,'colchao',100),
+    Object.assign(fld('i9','Créditos PIS/COFINS-imp',S.imp,'credPC'),{sel:[[1,'Aproveita'],[0,'Não']]}),Object.assign(fld('i10','Crédito IPI-imp',S.imp,'credIPI'),{sel:[[1,'Aproveita'],[0,'Não']]}),Object.assign(fld('i11','Crédito ICMS-imp',S.imp,'credICMS'),{sel:[[0,'Não'],[1,'Aproveita']]})],function(){clearTimeout(window._ct);window._ct=setTimeout(renderComp,400)});
+  renderFields('nacf',[fld('n1','Frete de compra % s/ mercadoria',S.nac,'frete',100),fld('n2','ICMS padrão p/ novos itens %',S.nac,'icms',100),fld('n3','PIS crédito %',S.nac,'pis',100),fld('n4','COFINS crédito %',S.nac,'cof',100)],function(){clearTimeout(window._ct);window._ct=setTimeout(renderComp,400)});
+}
+function r2(v){return Math.round(v*100)/100}
+function r4(v){return Math.round(v*10000)/10000}
+
+/* =================== PROPOSTA =================== */
+function renderProp(){
+  var P=S.prop;
+  ['cli','num','val','cond','obs'].forEach(function(k){var e=$('p-'+k);e.value=P[k]||'';e.oninput=function(){P[k]=e.value;save()}});
+  if(!P.num)P.num='DR-'+new Date().toISOString().slice(2,10).replace(/-/g,'')+'-'+String(Math.floor(Math.random()*90+10));$('p-num').value=P.num;
+  var h='<tr><th>Equipamento</th><th class="n">Paradas</th><th class="n">Qtd</th><th class="n">Unit. s/ IPI</th><th class="n">Total c/ IPI</th><th class="n">Margem contr.</th><th>UF</th><th>Custo</th><th></th></tr>',tv=0,tc=0,tq=0;
+  P.itens.forEach(function(it){var t=it.p*it.qtd;tv+=t;tc+=it.contrib*it.qtd;tq+=it.qtd;
+    h+='<tr data-id="'+it.id+'"><td>'+esc(it.mod)+'</td><td class="n">'+it.par+'</td><td class="n"><input type="number" class="w60" data-q min="1" value="'+it.qtd+'"></td><td class="n"><input type="number" class="w110" data-p step="any" value="'+r2(it.p)+'" style="text-align:right"></td><td class="n">'+brl(t*(1+it.ipi))+'</td><td class="n"><span class="tag '+(it.mc<0?'bad':it.mc<(S.margens[it.fam]||{}).min?'bad':it.mc<(S.margens[it.fam]||{}).alvo?'warn':'ok')+'">'+pct(it.mc)+'</span></td><td>'+it.uf+'</td><td>'+(it.src==='C'?'Composição':'Tabela')+'</td><td><button class="btn x" data-del>✕</button></td></tr>'});
+  if(!P.itens.length)h+='<tr><td colspan="9" style="color:var(--muted);padding:18px">Nenhum item. Monte o preço no SIMULADOR e clique em "Adicionar à proposta".</td></tr>';
+  else h+='<tr class="tot"><td>Total</td><td></td><td class="n">'+tq+'</td><td></td><td class="n">'+brl(tv*(1+S.fis.ipi))+'</td><td class="n">'+pct(tv?tc/tv:0)+'</td><td colspan="3"></td></tr>';
+  $('ptab').innerHTML=h;$('ptot').textContent=P.itens.length?'Contribuição total '+brl0(tc):'';
+  $('ptab').querySelectorAll('tr[data-id]').forEach(function(tr){var it=P.itens.find(function(x){return x.id===tr.dataset.id});
+    tr.querySelector('[data-q]').onchange=function(){it.qtd=Math.max(1,num(this.value));save();renderProp()};
+    tr.querySelector('[data-p]').onchange=function(){var np=num(this.value),c0=it.custo,old=it.p;var t=old>0?(old-c0-it.contrib)/old:0;it.p=np;it.contrib=np*(1-t)-c0;it.mc=np>0?it.contrib/np:0;save();renderProp()};
+    tr.querySelector('[data-del]').onclick=function(){P.itens=P.itens.filter(function(x){return x!==it});save();renderProp()}});
+  $('p-clear').onclick=function(){if(confirm('Limpar todos os itens da proposta?')){P.itens=[];P.num='';save();renderProp()}};
+  $('p-int').onclick=function(){printProp(true)};$('p-cliprint').onclick=function(){printProp(false)};
+}
+function printProp(interna){
+  var P=S.prop,tv=0,tc=0,dt=new Date();
+  var rows=P.itens.map(function(it,i){var t=it.p*it.qtd;tv+=t;tc+=it.contrib*it.qtd;return '<tr><td>'+(i+1)+'</td><td>'+esc(it.mod)+' — '+it.par+' paradas</td><td style="text-align:right">'+it.qtd+'</td><td style="text-align:right">'+brl(it.p)+'</td><td style="text-align:right">'+brl(t*(1+it.ipi))+'</td>'+(interna?'<td style="text-align:right">'+pct(it.mc)+'</td><td>'+it.src+'</td>':'')+'</tr>'}).join('');
+  var vd=new Date(dt.getTime()+num(P.val)*864e5);
+  var dif=P.itens.some(function(it){return it.difc>0});
+  $('print').innerHTML='<div class="ph"><img src="logo.png"><div style="text-align:right"><div style="font-size:15px;font-weight:700;letter-spacing:.1em">PROPOSTA COMERCIAL'+(interna?' • USO INTERNO':'')+'</div><div style="font-size:12px;opacity:.85">Nº '+esc(P.num)+' • '+dt.toLocaleDateString('pt-BR')+'</div></div></div>'+
+   '<table style="margin:14px 0;width:100%"><tr><td style="width:50%"><b>Cliente:</b> '+esc(P.cli||'—')+'</td><td><b>Validade:</b> '+vd.toLocaleDateString('pt-BR')+' ('+esc(P.val)+' dias)</td></tr><tr><td colspan="2"><b>Condição de pagamento:</b> '+esc(P.cond||'—')+'</td></tr></table>'+
+   '<table style="width:100%;border-collapse:collapse" border="0"><thead><tr><th style="text-align:left;padding:6px">#</th><th style="text-align:left;padding:6px">Equipamento</th><th style="text-align:right;padding:6px">Qtd</th><th style="text-align:right;padding:6px">Unitário s/ IPI</th><th style="text-align:right;padding:6px">Total</th>'+(interna?'<th style="text-align:right;padding:6px">Margem</th><th>Custo</th>':'')+'</tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td></td><td style="padding:8px 6px"><b>TOTAL</b></td><td></td><td></td><td style="text-align:right;padding:8px 6px"><b>'+brl(tv*(1+S.fis.ipi))+'</b></td>'+(interna?'<td style="text-align:right"><b>'+pct(tv?tc/tv:0)+'</b></td><td></td>':'')+'</tr></tfoot></table>'+
+   (P.obs?'<p style="margin-top:14px"><b>Observações:</b> '+esc(P.obs)+'</p>':'')+
+   '<p style="margin-top:14px;font-size:11px;color:#555">Valores em R$. '+(S.fis.ipi?'IPI de '+pct(S.fis.ipi,1)+' incluso no total.':'IPI: não incidente conforme enquadramento informado.')+(dif?' DIFAL/FCP de responsabilidade do destinatário contribuinte não incluso.':'')+'</p>'+
+   (interna?'<p style="font-size:11px;color:#555">Contribuição total estimada: '+brl(tc)+'. Documento interno — não enviar ao cliente.</p>':'');
+  setTimeout(function(){window.print()},150);
+}
+
+/* =================== TABELA =================== */
+function renderTab(){
+  var tf=$('t-fam');if(!tf.options.length){fillSel(tf,['Todas'].concat(fams()),'Todas');tf.onchange=$('t-q').oninput=$('t-cen').onchange=renderTab;$('t-csv').onclick=csv}
+  var rows=tabRows();
+  var h='<tr><th>Família</th><th>Modelo</th><th class="n">Paradas</th><th class="n">Custo (R$)</th><th class="n">Mínimo</th><th class="n">Alvo</th><th class="n">Abertura</th><th class="n">Alvo c/ IPI</th><th class="n">Contrib. alvo</th></tr>';
+  rows.forEach(function(r){h+='<tr data-k="'+esc(r.k)+'" style="cursor:pointer"><td>'+esc(r.fam)+'</td><td>'+esc(r.mod)+(r.comp?' <span class="tag nt">C</span>':'')+'</td><td class="n">'+r.par+'</td><td class="n"><span data-edit title="Editar custo" style="border-bottom:1px dashed #9fb0cf">'+brl(r.custo)+(r.ed?' ✎':'')+'</span></td><td class="n">'+brl(r.min)+'</td><td class="n"><b>'+brl(r.alvo)+'</b></td><td class="n">'+brl(r.ab)+'</td><td class="n">'+brl(r.alvo*(1+S.fis.ipi))+'</td><td class="n">'+brl(r.contrib)+'</td></tr>'});
+  $('ttab').innerHTML=h;
+  $('ttab').querySelectorAll('tr[data-k]').forEach(function(tr){tr.onclick=function(e){var k=tr.dataset.k,p=k.split('|');
+    if(e.target.hasAttribute('data-edit')){var v=prompt('Custo de fabricação (R$) para\n'+p.join(' • ')+'\n\nOriginal da planilha: '+brl(origCost(k))+'\nDeixe em branco para voltar ao original.',r2(tabCost(k)));if(v===null)return;if(v.trim()==='')delete S.custos[k];else S.custos[k]=num(v);save();renderTab();return}
+    S.sim.fam=p[0];S.sim.mod=p[1];S.sim.par=+p[2];S.sim.pn=null;save();initSim();go('sim')}});
+}
+function tabRows(){
+  var f=$('t-fam').value,q=($('t-q').value||'').toLowerCase(),cen=$('t-cen').value,F=S.fis;
+  return D.custos.filter(function(r){return (f==='Todas'||!f||r[0]===f)&&(!q||r[1].toLowerCase().indexOf(q)>=0)}).map(function(r){
+    var k=keyOf(r[0],r[1],r[2]),m=S.margens[r[0]],cost=tabCost(k),pr,ct;
+    if(cen==='ref'){var t=F.icmsRef+(F.pis+F.cofins)*(1-F.icmsRef*F.excl)+F.com;pr=function(mg){return cost/(1-t-mg)};ct=function(p){return p*(1-t)-cost}}
+    else{var sim=Object.assign({},S.sim,{fam:r[0],mod:r[1],par:r[2],src:'tab'}),c=ctx(sim);cost=c.custo;pr=c.price;ct=function(p){return p*(1-c.t)-c.base}}
+    var al=pr(m.alvo);return {k:k,fam:r[0],mod:r[1],par:r[2],custo:cost,ed:S.custos[k]!=null,comp:!!(S.comps[k]&&S.comps[k].itens.length),min:pr(m.min),alvo:al,ab:pr(m.ab),contrib:ct(al)}});
+}
+function csv(){
+  var rows=tabRows(),L=[['Família','Modelo','Paradas','Custo','Preço mínimo','Preço alvo','Preço abertura','Contribuição alvo'].join(';')];
+  rows.forEach(function(r){L.push([r.fam,r.mod,r.par,r.custo,r.min,r.alvo,r.ab,r.contrib].map(function(v){return typeof v==='number'?v.toFixed(2).replace('.',','):'"'+v+'"'}).join(';'))});
+  dl('\ufeff'+L.join('\n'),'tabela-precos-delta-rio.csv','text/csv');
+}
+function dl(txt,name,type){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:type}));a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},2000)}
+
+/* =================== PREMISSAS =================== */
+function renderPrem(){
+  var h='<tr><th>Família</th><th class="n">Mínima %</th><th class="n">Alvo %</th><th class="n">Abertura %</th></tr>';
+  Object.keys(S.margens).forEach(function(f){var m=S.margens[f];h+='<tr><td><b>'+esc(f)+'</b></td>'+['min','alvo','ab'].map(function(k){return '<td class="n"><input type="number" step="0.5" data-f="'+esc(f)+'" data-m="'+k+'" value="'+r4(m[k]*100)+'" style="max-width:90px;text-align:right"></td>'}).join('')+'</tr>'});
+  $('mtab').innerHTML=h;
+  $('mtab').querySelectorAll('input').forEach(function(e){e.onchange=function(){S.margens[e.dataset.f][e.dataset.m]=num(e.value)/100;save()}});
+  renderFields('fisf',[Object.assign(fld('f0','UF de origem (faturamento)',S.fis,'origem'),{sel:UFS.map(function(u){return [u,u]})}),fld('f1','PIS %',S.fis,'pis',100),fld('f2','COFINS %',S.fis,'cofins',100),fld('f3','Comissão % (s/ preço sem IPI)',S.fis,'com',100),fld('f4','IPI na venda %',S.fis,'ipi',100,'any','premissa: 0%'),fld('f5','ICMS referência da tabela %',S.fis,'icmsRef',100,'any','cenário "Referência"'),Object.assign(fld('f6','ICMS na base PIS/COFINS',S.fis,'excl'),{sel:[[1,'Excluir (Tema 69)'],[0,'Manter']]})]);
+  renderFields('resf',[fld('r1','Despesas fixas rateadas % preço',S.res,'fixas',100,'any','p/ lucro líquido estimado'),fld('r2','IRPJ + CSLL %',S.res,'ir',100),Object.assign(fld('r3','Câmbio',S.res,'fxMode'),{sel:[['auto','Ao vivo (AwesomeAPI)'],['man','Manual']]}),fld('r4','USD manual',S.res,'usd'),fld('r5','EUR manual',S.res,'eur'),fld('r6','CNY manual',S.res,'cny')],renderFX);
+  var u='<tr><th>UF</th><th class="n">Interna %</th><th class="n">FCP %</th><th>Situação</th><th>Fonte / data</th></tr>',nv=0;
+  UFS.forEach(function(k){var x=S.uf[k];if(x.st==='val')nv++;u+='<tr><td><b>'+k+'</b></td><td class="n"><input type="number" step="0.5" data-u="'+k+'" data-k="a" value="'+r4(x.a*100)+'" style="max-width:76px;text-align:right"></td><td class="n"><input type="number" step="0.5" data-u="'+k+'" data-k="f" value="'+r4(x.f*100)+'" style="max-width:66px;text-align:right"></td><td><select data-u="'+k+'" data-k="st" style="max-width:120px"><option value="ref"'+(x.st==='ref'?' selected':'')+'>Referência</option><option value="val"'+(x.st==='val'?' selected':'')+'>Validado</option></select></td><td><input data-u="'+k+'" data-k="fonte" value="'+esc(x.fonte)+'" style="min-width:150px"></td></tr>'});
+  $('uftab').innerHTML=u;$('ufr').textContent=nv+' de 27 validadas';
+  $('uftab').querySelectorAll('[data-u]').forEach(function(e){e.onchange=function(){var x=S.uf[e.dataset.u],k=e.dataset.k;x[k]=(k==='a'||k==='f')?num(e.value)/100:e.value;x.data=today();save();if(k==='st')renderPrem()}});
+  $('x-exp').onclick=function(){var o=JSON.parse(JSON.stringify(S));dl(JSON.stringify({app:'drsim',em:new Date().toISOString(),dados:o},null,1),'simulador-delta-rio-config-'+today()+'.json','application/json')};
+  $('x-imp').onchange=function(){var f=this.files[0];if(!f)return;f.text().then(function(t){try{var j=JSON.parse(t);if(j.app!=='drsim')throw 0;S=merge(defaults(),j.dados);save();alert('Configuração importada.');initSim();go('prem')}catch(e){alert('Arquivo inválido.')}})};
+  $('x-rst').onclick=function(){if(confirm('Restaurar todos os padrões? Composições, custos editados e proposta deste aparelho serão apagados.')){S=defaults();save();initSim();go('prem')}};
+  $('x-out').onclick=function(){localStorage.removeItem(LSPW);location.reload()};
+}
+
+/* =================== MEMORIAL =================== */
+function renderMemo(){
+  var M=[
+   ['Fórmula do preço','PV (sem IPI) = Custo base ÷ (1 − ICMS próprio − DIFAL vendedor − FCP vendedor − PIS/COFINS efetivo − comissão − despesas variáveis − custo financeiro − margem). Custo base = custo do equipamento × (1 + contingência) + frete + instalação + garantia + outros − créditos adicionais.'],
+   ['Custo do equipamento','Duas fontes: (a) tabela Delta Rio out/2026 (99 combinações), editável por item; (b) composição: soma do custo líquido dos componentes nacionais e importados + demais custos não detalhados. Os custos já são líquidos de créditos recuperáveis — não duplicar em "créditos adicionais".'],
+   ['Custo líquido — nacional','Desembolso = mercadoria + IPI + frete de compra. Créditos (Lucro Real, quando aproveitáveis): ICMS destacado, IPI e PIS/COFINS 9,25% sobre (mercadoria − ICMS). Líquido = desembolso − créditos.'],
+   ['Custo líquido — importado','FOB × câmbio (com colchão) → valor aduaneiro (+ frete internacional e seguro). II = VA × alíq.; IPI = (VA + II) × alíq.; PIS/COFINS-importação = VA × 2,10% / 9,65%; ICMS efetivo calculado por dentro; despesas aduaneiras e frete interno % VA. Créditos configuráveis (PIS/COFINS, IPI, ICMS).'],
+   ['ICMS próprio','Venda interna (UF destino = origem): alíquota interna da origem. Interestadual: 12% ou 7% automático pela regra de origem (Sul/Sudeste → N/NE/CO/ES = 7%), ou 4% para conteúdo de importação > 40% (Res. Senado 13/2012). Redução de base opcional.'],
+   ['DIFAL / FCP','Não contribuinte: DIFAL e FCP com o vendedor (entram no preço). Contribuinte uso/consumo/ativo: com o comprador (informativo). Revenda/industrialização: sem DIFAL. Base dupla: base = V × (1 − ICMS inter) ÷ (1 − (interna + FCP)); DIFAL = base × interna − V × inter; FCP = base × FCP. Base única: V × (interna − inter) e V × FCP.'],
+   ['PIS/COFINS','Regime não cumulativo 1,65% + 7,60% sobre o preço, com opção de excluir o ICMS próprio da base (Tema 69 STF).'],
+   ['Custo financeiro','Valor presente da condição de pagamento: entrada + parcelas descontadas à taxa mensal informada. Custo % = 1 − VP. O prazo médio ponderado é exibido no simulador.'],
+   ['Margens','Margem de contribuição sobre o preço sem IPI, antes de despesas fixas e IRPJ/CSLL. O lucro líquido estimado aplica despesas fixas rateadas (%) e IRPJ/CSLL sobre o resultado positivo.'],
+   ['Assertividade','Índice ponderado: UF validada (20), composição (15), composição revisada ≤ 30 dias (10), câmbio ao vivo (10, quando há importados), custos de venda informados (10), margem ≥ mínima (15), NCM/IPI confirmados (10), perfil do cliente (5), pagamento (5). ≥ 85% = preço confiável.'],
+   ['Limites','Não contempla ICMS-ST, antecipação, incentivos estaduais, partilha específica, frete na base do ICMS e IBS/CBS (em 2026 a CBS 0,9% e o IBS 0,1% são destacados e compensáveis, sem custo). Valores são orçamento de engenharia comercial, não apuração fiscal; aprovação fiscal por NCM, CFOP, UF, perfil e finalidade.'],
+   ['Dados','Custos e margens ficam criptografados na página (AES-256). Edições, composições e propostas ficam salvas no aparelho; use Premissas → Exportar para levar a outro aparelho.']
+  ];
+  $('memo').innerHTML='<table>'+M.map(function(m,i){return '<tr><td style="width:200px;vertical-align:top;font-weight:700;color:var(--navy)">'+String(i+1).padStart(2,'0')+' | '+m[0]+'</td><td>'+m[1]+'</td></tr>'}).join('')+'</table>';
+}
+
+/* =================== início =================== */
+async function start(pw,rem){
+  try{D=await decrypt(pw)}catch(e){$('lerr').textContent='Senha incorreta.';localStorage.removeItem(LSPW);return false}
+  if(rem)try{localStorage.setItem(LSPW,pw)}catch(e){}
+  var st=null;try{st=JSON.parse(localStorage.getItem(LS)||'null')}catch(e){}
+  S=st&&st.v===1?merge(defaults(),st):defaults();
+  $('login').classList.add('hide');$('hdr').classList.remove('hide');$('app').classList.remove('hide');
+  buildNav();initSim();initComp();renderFX();go(S.view||'sim');
+  loadFX();setInterval(loadFX,5*60*1000);
+  return true;
+}
+$('lform').onsubmit=function(e){e.preventDefault();$('lerr').textContent='';start($('lpw').value,$('lrem').checked)};
+(function(){var pw=null;try{pw=localStorage.getItem(LSPW)}catch(e){}if(pw)start(pw,true)})();
+</script>
+</body>
+</html>
