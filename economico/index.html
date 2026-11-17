@@ -183,7 +183,6 @@ body:hover .hint{opacity:.7}
         <div class="price" id="price-USD"><small>R$</small>-,----</div>
         <div class="row">
           <div class="var" id="var-USD">—</div>
-          <div class="meta"><div>Mín<b id="low-USD">-</b></div><div>Máx<b id="high-USD">-</b></div></div>
         </div>
       </div>
 
@@ -199,7 +198,6 @@ body:hover .hint{opacity:.7}
         <div class="price" id="price-EUR"><small>R$</small>-,----</div>
         <div class="row">
           <div class="var" id="var-EUR">—</div>
-          <div class="meta"><div>Mín<b id="low-EUR">-</b></div><div>Máx<b id="high-EUR">-</b></div></div>
         </div>
       </div>
 
@@ -215,7 +213,6 @@ body:hover .hint{opacity:.7}
         <div class="price" id="price-CNY"><small>R$</small>-,----</div>
         <div class="row">
           <div class="var" id="var-CNY">—</div>
-          <div class="meta"><div>Mín<b id="low-CNY">-</b></div><div>Máx<b id="high-CNY">-</b></div></div>
         </div>
       </div>
     </section>
@@ -345,8 +342,6 @@ function setRate(code, bid, pct, low, high) {
     v.className = 'var ' + (up ? 'up' : 'down');
     v.textContent = `${up ? '▲' : '▼'} ${up ? '+' : ''}${fmt(pct, 2)}% hoje`;
   }
-  $('low-' + code).textContent = low ? fmt(low) : '-';
-  $('high-' + code).textContent = high ? fmt(high) : '-';
   $('t-' + code).textContent = fmt(bid);
 }
 async function loadRates() {
@@ -523,7 +518,7 @@ document.addEventListener('dblclick', toggleFS);
 
 /* ================= AUTO-ATUALIZAÇÃO DO PAINEL ================= */
 // Quando uma versão nova é publicada no GitHub, o painel se recarrega sozinho (verifica a cada 5 min).
-const VERSAO = '2026-11-16-9';
+const VERSAO = '2026-11-17-1';
 async function checarVersao() {
   try {
     const html = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
