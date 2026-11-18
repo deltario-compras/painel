@@ -447,6 +447,9 @@ async function loadNews() {
   await Promise.all([worker(), worker(), worker(), worker()]);
   let all = results.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
   if (!all.length) { if (!news.length) $('items').innerHTML = '<div class="empty">Não foi possível carregar as notícias agora. Nova tentativa em instantes…</div>'; setTimeout(loadNews, 60000); return; }
+  // descarta imagens que não são da notícia: logotipos (.svg) e a mesma foto repetida em várias notícias
+  const imgCount = {}; all.forEach(n => { if (n.img) imgCount[n.img] = (imgCount[n.img] || 0) + 1; });
+  all.forEach(n => { if (n.img && (imgCount[n.img] > 1 || /\.svg(\?|$)|logo/i.test(n.img))) n.img = ''; });
   // tira o título repetido no começo do complemento
   all.forEach(n => { if (n.desc.toLowerCase().startsWith(n.title.toLowerCase())) n.desc = n.desc.slice(n.title.length).replace(/^[\s.:\-–—|]+/, ''); });
   const limit = Date.now() - CONFIG.maxHours * 36e5;
@@ -518,7 +521,7 @@ document.addEventListener('dblclick', toggleFS);
 
 /* ================= AUTO-ATUALIZAÇÃO DO PAINEL ================= */
 // Quando uma versão nova é publicada no GitHub, o painel se recarrega sozinho (verifica a cada 5 min).
-const VERSAO = '2026-11-17-1';
+const VERSAO = '2026-11-18-1';
 async function checarVersao() {
   try {
     const html = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
