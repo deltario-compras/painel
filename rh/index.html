@@ -46,6 +46,10 @@ window.addEventListener('message', function (e) {
 window.addEventListener('online', function () { if (atual) abrir(atual); });
 window.addEventListener('offline', function () { msg.textContent = 'Sem internet. O painel abre sozinho quando a conexão voltar.'; capa.classList.remove('fora'); });
 var h = location.hash.slice(1), ini = BASE + '?k=' + CHAVE;
+/* Links públicos pelo GitHub: ?cv=1 (currículo), ?vaga=<id>, ?h=<holerite>, ?t=<avaliação> */
+var qs = new URLSearchParams(location.search), pub = '';
+['cv', 'vaga', 'h', 't'].forEach(function (c) { var v = qs.get(c); if (!pub && v && /^[A-Za-z0-9_-]{1,80}$/.test(v)) pub = c + '=' + encodeURIComponent(v); });
+if (pub) { ini = BASE + '?' + pub; document.title = qs.get('h') ? 'Holerite - Delta Rio' : qs.get('t') ? 'Avaliação - Delta Rio' : 'Trabalhe conosco - Delta Rio'; }
 if (h && valido(decodeURIComponent(h))) ini = decodeURIComponent(h);
 abrir(ini);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
