@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b2545">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Financeiro DR">
+<title>FINANCEIRO - Delta Rio</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  html,body{margin:0;height:100%;background:#0b2545;overflow:hidden}
+  #capa{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:600 14px/1.4 "Segoe UI",Roboto,Arial,sans-serif;letter-spacing:.12em;gap:14px}
+  #capa svg{width:64px;height:64px}
+  iframe{position:fixed;top:0;left:0;width:100%;height:100%;border:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);box-sizing:border-box;background:#eef2f7}
+</style>
+</head>
+<body>
+<div id="capa"><svg viewBox="0 0 32 32"><path d="M16 3 30 28H2Z" fill="#fff"/><path d="M16 12 23 25H9Z" fill="#f47230"/></svg>FINANCEIRO<br><span style="font-weight:400;opacity:.7">Carregando…</span></div>
+<script>
+  // Link do App da Web (com ?k=) — trocar quando o Apps Script for implantado
+  var PAINEL = 'https://script.google.com/macros/s/AKfycbzP12l0j5tbpWkD2rBM2Kh03LhbgG-mD1n1UJBjE7bzSEhTZ3wi5_HRm5ue9hSdymKYog/exec?k=ehSau7ra7qnFkzYRidQRG2nJ';
+  var f = document.createElement('iframe');
+  f.src = PAINEL + (location.hash ? location.hash : '');
+  f.allow = 'clipboard-write; fullscreen';
+  f.onload = function () { document.getElementById('capa').style.display = 'none'; };
+  document.body.appendChild(f);
+  window.addEventListener('message', function (e) {
+    if (!/\.googleusercontent\.com$/.test(new URL(e.origin).hostname)) return;
+    var d = e.data || {};
+    if (d.dr === 'tela') {
+      var el = document.documentElement;
+      (el.requestFullscreen ? el.requestFullscreen() : Promise.reject()).then(function () { e.source.postMessage({ dr: 'tela-ok' }, '*'); }, function () {});
+    }
+  });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(function () {});
+</script>
+</body>
+</html>
